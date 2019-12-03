@@ -5,18 +5,70 @@ import (
 	"math"
 )
 
-func getSum(matrix [][]int, top, left, bottom, right int) int {
-	if top == 0 && left == 0 {
-		return matrix[bottom][right]
-	} else if top == 0 {
-		return matrix[bottom][right] - matrix[bottom][left-1]
-	} else if left == 0 {
-		return matrix[bottom][right] - matrix[top-1][right]
-	} else {
-		return matrix[bottom][right] - matrix[bottom][left-1] - matrix[top-1][right] + matrix[top-1][left-1]
+func min(x, y int) int {
+	if x < y {
+		return x
 	}
+	return y
 }
 
+func getLine(matrix [][]int, top, bottom int) []int {
+	ret := make([]int, len(matrix[0])+1)
+	if top == 0 {
+		copy(ret[1:], matrix[bottom])
+	} else {
+		for i := range matrix[bottom] {
+			ret[i+1] = matrix[bottom][i] - matrix[top-1][i]
+		}
+	}
+	return ret
+}
+func mergeSort(line []int, k int) int {
+	if len(line) == 1 {
+		return math.MaxInt64
+	}
+	mid := len(line) / 2
+	ret := mergeSort(line[:mid], k)
+	if ret == 0 {
+		return 0
+	}
+	ret = min(ret, mergeSort(line[mid:], k))
+	if ret == 0 {
+		return 0
+	}
+
+	var i, j int
+	for i, j = 0, mid; i < mid && j < len(line); {
+		if line[j]-line[i] > k {
+			i++
+		} else {
+			ret = min(ret, k-(line[j]-line[i]))
+			if ret == 0 {
+				return 0
+			}
+			j++
+		}
+	}
+
+	tmp := make([]int, mid)
+	copy(tmp, line[:mid])
+	idx := 0
+	for i, j = 0, mid; i < mid && j < len(line); {
+		if tmp[i] < line[j] {
+			line[idx] = tmp[i]
+			i++
+		} else {
+			line[idx] = line[j]
+			j++
+		}
+		idx++
+	}
+	for ; i < mid; i++ {
+		line[idx] = tmp[i]
+		idx++
+	}
+	return ret
+}
 func maxSumSubmatrix(matrix [][]int, k int) int {
 	m := len(matrix)
 	if m == 0 {
@@ -41,25 +93,18 @@ func maxSumSubmatrix(matrix [][]int, k int) int {
 		}
 	}
 
-	ret := math.MinInt64
-	for i = 0; i < m; i++ {
-		for j = 0; j < n; j++ {
-			for bottom := i; bottom < m; bottom++ {
-				for right := j; right < n; right++ {
-					sum := getSum(matrix, i, j, bottom, right)
-					if sum == k {
-						return k
-					} else if sum < k && sum > ret {
-						ret = sum
-					}
-				}
-			}
+	ret := math.MaxInt64
+	for top := 0; top < m; top++ {
+		for bottom := top; bottom < m; bottom++ {
+			line := getLine(matrix, top, bottom)
+			ret = min(ret, mergeSort(line, k))
 		}
 	}
-	return ret
+	return k - ret
 }
 
 func main() {
 	fmt.Println("vim-go")
 	fmt.Println(maxSumSubmatrix([][]int{{1, 0, 1}, {0, -2, 3}}, 2))
+	fmt.Println(maxSumSubmatrix([][]int{{2, 2, -1}}, 0))
 }
