@@ -52,6 +52,7 @@ func canIWin(maxChoosableInteger int, desiredTotal int) bool {
 	if maxChoosableInteger*(maxChoosableInteger+1)/2 < desiredTotal {
 		return false
 	}
+	var hit int = 0
 
 	var visited int
 	dp := map[[2]int]bool{}
@@ -61,9 +62,11 @@ func canIWin(maxChoosableInteger int, desiredTotal int) bool {
 			return false
 		}
 		if ret, found := dp[[2]int{visited, des}]; found {
+			hit++
 			return ret
 		}
 		for i := 1; i <= maxChoosableInteger; i++ {
+			//for i := maxChoosableInteger; i >= 1; i-- {
 			if !getBit(visited, uint(i)) {
 				setBit(&visited, uint(i))
 				res := f(des - i)
@@ -78,13 +81,15 @@ func canIWin(maxChoosableInteger int, desiredTotal int) bool {
 		dp[[2]int{visited, des}] = false
 		return false
 	}
+	f(desiredTotal)
+	fmt.Println(len(dp), hit)
 	return f(desiredTotal)
 }
 
 func main() {
 	fmt.Println("vim-go")
 	//fmt.Println(canIWin(9, 10))
-	for i := 10; i < 40; i++ {
-		fmt.Println(canIWin(9, i))
+	for i := 100; i < 200; i++ {
+		fmt.Println(canIWin(20, i))
 	}
 }
