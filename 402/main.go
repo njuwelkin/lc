@@ -32,6 +32,35 @@ func removeKdigits(num string, k int) string {
 	return string(ret[:i])
 }
 
+func removeKdigits2(num string, k int) string {
+	if len(num) <= k {
+		return "0"
+	}
+
+	stack := make([]byte, len(num))
+	top := 0
+
+	var i int
+	for i = 0; i < len(num); {
+		if top == 0 || num[i] >= stack[top-1] || k == 0 {
+			stack[top] = num[i] //push
+			top++
+			i++
+		} else {
+			top-- // pop
+			k--
+		}
+	}
+
+	stack = stack[:top-k]
+	for i = 0; i < len(stack) && stack[i] == '0'; i++ {
+	}
+	if i == len(stack) {
+		return "0"
+	}
+	return string(stack[i:])
+}
+
 func main() {
 	fmt.Println("vim-go")
 	fmt.Println(removeKdigits("1432219", 3))

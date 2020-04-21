@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func findPoisonedDuration(timeSeries []int, duration int) int {
+func findPoisonedDuration2(timeSeries []int, duration int) int {
 	n := len(timeSeries)
 	if n == 0 {
 		return 0
@@ -21,8 +21,26 @@ func findPoisonedDuration(timeSeries []int, duration int) int {
 	return ret
 }
 
+func findPoisonedDuration(timeSeries []int, duration int) int {
+	if len(timeSeries) == 0 {
+		return 0
+	}
+	ret := 0
+	for i := 1; i < len(timeSeries); i++ {
+		if timeSeries[i]-timeSeries[i-1] < duration {
+			ret += timeSeries[i] - timeSeries[i-1]
+		} else {
+			ret += duration
+		}
+	}
+	ret += duration
+	return ret
+}
+
 func main() {
 	fmt.Println("vim-go")
 	fmt.Println(findPoisonedDuration([]int{1, 4}, 2))
+	fmt.Println(findPoisonedDuration2([]int{1, 4}, 2))
 	fmt.Println(findPoisonedDuration([]int{1, 2}, 2))
+	fmt.Println(findPoisonedDuration2([]int{1, 2}, 2))
 }
