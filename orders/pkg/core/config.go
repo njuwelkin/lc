@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+	"os"
 	"path/filepath"
 )
 
 type shelfCapacity struct {
-	Hot      int
-	Cold     int
-	Frozen   int
-	Overflow int
+	Hot      int `yaml:"hot"`
+	Cold     int `yaml:"cold"`
+	Frozen   int `yaml:"frozen"`
+	Overflow int `yaml:"overflow"`
 }
 
 type logConfig struct {
@@ -37,9 +38,14 @@ const (
 	defaultFrozenShelves   = 10
 	defaultOverflowShelves = 15
 	defaultNumOfCouriers   = 10
+
+	defaultLogFile       = "./order.log"
+	defaultLogLevel      = "info"
+	defaultLogMaxSize    = 10 // MB
+	defaultLogMaxBackups = 10
 )
 
-func NewConfig(path string) (*config, error) {
+func newConfig(path string) (*config, error) {
 	if path == "" {
 		path = defaultConfigFile
 	}
@@ -65,8 +71,12 @@ func NewConfig(path string) (*config, error) {
 }
 
 func (c *config) load(path string) error {
-	if !c.Exists(path) {
-		return ResourceNotFound
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return ResourceNotFound
+		} else {
+			return err
+		}
 	}
 	absPath, err := filepath.Abs(path)
 	if err != nil {
