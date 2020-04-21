@@ -1,0 +1,21 @@
+* make your order ingestion rate configurable
+* 
+
+Challenge Prompt:
+* "the system should dispatch a courier to pick up and deliver that specific order"
+	the total number of couriers was not given. here I'll make it configurable and the default value is 100.
+
+Shelves:
+* "If no such move is possible, an order from the overflow shelf should be discarded as waste."
+	here it doesn't indicate which order to discard. 
+	there are two possible solutions: 
+		discard the order with least value.
+		discard the order with the least remain shelfLife
+	assume the former one.
+
+Shelf Life: 
+* assume orderAge is in second.
+* it doesn't explicitly describe how to calculate the value of an order if it has been put on both overflow shelf and single-temperature shelf.
+	I assume the formular is:
+		value = (shelfLife - decayRate * (ageOnOverFlow * 2 + ageOnSigleTemp * 1)) / shelfLife
+	for example if there is an order has been on overflow shelf for 2 seconds, then been moved to single-temperature shelf and stay there for 3 seconds. the remain value is (shelfLife - decayRate * 2 * 2 - decayRate * 3 * 1) / shelfLife.
