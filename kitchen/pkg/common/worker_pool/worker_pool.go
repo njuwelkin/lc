@@ -1,4 +1,4 @@
-package common
+package worker_pool
 
 import ()
 

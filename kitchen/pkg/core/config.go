@@ -2,8 +2,9 @@ package core
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
+	//"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -43,13 +44,15 @@ const (
 	defaultLogLevel      = "info"
 	defaultLogMaxSize    = 10 // MB
 	defaultLogMaxBackups = 10
+
+	defaultConfigFile = "./kitchen.conf"
 )
 
 func newConfig(path string) (*config, error) {
 	if path == "" {
 		path = defaultConfigFile
 	}
-	logConfig := &LogConfig{
+	logConfig := &logConfig{
 		File:       defaultLogFile,
 		Level:      defaultLogLevel,
 		MaxSize:    defaultLogMaxSize,
@@ -67,13 +70,13 @@ func newConfig(path string) (*config, error) {
 		NumOfCouriers: defaultNumOfCouriers,
 		LogConfig:     logConfig,
 	}
-	return conf, nil
+	return &conf, nil
 }
 
 func (c *config) load(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			return ResourceNotFound
+			return ResourceNotFound.WithField("object", "config")
 		} else {
 			return err
 		}

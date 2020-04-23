@@ -9,7 +9,8 @@ const (
 )
 
 var (
-	ResourceNotFound = newGeneralErr(1, "resource not found")
+	ResourceNotFound    = newGeneralErr(1, "resource not found")
+	InvalidOrderRequest = newGeneralErr(2, "invalid order")
 )
 
 type Error struct {
@@ -46,7 +47,7 @@ func (e *Error) WithField(name string, value interface{}) *Error {
 	return err
 }
 
-func newErr(code int, message string) *MVError {
+func newErr(code int, message string) *Error {
 	return &Error{
 		ErrorCode: code,
 		Message:   message,
@@ -54,6 +55,6 @@ func newErr(code int, message string) *MVError {
 	}
 }
 
-func newGeneralErr(code int, message string) *MVError {
-	return newMVErr(code+generalCat, "general: "+message)
+func newGeneralErr(code int, message string) *Error {
+	return newErr(code+generalCat, "general: "+message)
 }
