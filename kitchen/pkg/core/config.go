@@ -10,30 +10,49 @@ import (
 )
 
 type shelfCapacity struct {
-	Hot      int `yaml:"hot"`
-	Cold     int `yaml:"cold"`
-	Frozen   int `yaml:"frozen"`
+	// capacity of hot shelf
+	Hot int `yaml:"hot"`
+
+	// capacity of cold shelf
+	Cold int `yaml:"cold"`
+
+	// capacity of frozen shelf
+	Frozen int `yaml:"frozen"`
+
+	// capacity of overflow shelf
 	Overflow int `yaml:"overflow"`
 }
 
 type logConfig struct {
-	File       string `yaml:"file,omitempty"`
-	Level      string `yaml:"level,omitempty"`
-	MaxSize    int    `yaml:"maxSize,omitempty"`
-	MaxBackups int    `yaml:"maxBackups,omitempty"`
+	// path of log file
+	File string `yaml:"file,omitempty"`
+
+	// log level
+	Level string `yaml:"level,omitempty"`
+
+	// max log file size in MB
+	MaxSize int `yaml:"maxSize,omitempty"`
+
+	// max number of log files
+	MaxBackups int `yaml:"maxBackups,omitempty"`
 }
 
 type config struct {
-	// orders per second
-	IngestRate    int           `yaml:"ingestRate"`
-	ShelfCap      shelfCapacity `yaml:"shelfCapacity"`
-	NumOfCouriers int           `yaml:"numOfCouriers"`
+	// interval of ingestion in millisecond
+	IngestInterval int `yaml:"ingestRate"`
 
+	// capacity of shelves
+	ShelfCap shelfCapacity `yaml:"shelfCapacity"`
+
+	// total number of couries
+	NumOfCouriers int `yaml:"numOfCouriers"`
+
+	// log configuration
 	LogConfig *logConfig `yaml:"log"`
 }
 
 const (
-	defaultIngestRate      = 2
+	defaultIngestInterval  = 500
 	defaultHotSelves       = 10
 	defaultColdShelves     = 10
 	defaultFrozenShelves   = 10
@@ -65,10 +84,10 @@ func newConfig(path string) (*config, error) {
 		Overflow: defaultOverflowShelves,
 	}
 	conf := config{
-		IngestRate:    defaultIngestRate,
-		ShelfCap:      shelfCapacity,
-		NumOfCouriers: defaultNumOfCouriers,
-		LogConfig:     logConfig,
+		IngestInterval: defaultIngestInterval,
+		ShelfCap:       shelfCapacity,
+		NumOfCouriers:  defaultNumOfCouriers,
+		LogConfig:      logConfig,
 	}
 	return &conf, nil
 }

@@ -17,11 +17,10 @@ func NewCookMgr(ctx *core.Context) *cookMgr {
 }
 
 func (c *cookMgr) Notify(order *core.Order) {
-
 	c.cook(order)
-	c.Send(order)
+	c.Kitchen.Send(order)
 }
 
 func (c *cookMgr) cook(order *core.Order) {
-	order.Status = core.Cooking
+	order.Status = core.Cooked
 }

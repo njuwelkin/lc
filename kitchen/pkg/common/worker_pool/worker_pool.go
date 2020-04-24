@@ -66,7 +66,7 @@ func (workerPool *WorkerPool) Run() *WorkerPool {
 		for i := 0; i < workerPool.workers; i++ {
 			go workerPool.execute()
 		}
-		running = true
+		workerPool.running = true
 	}
 	return workerPool
 }

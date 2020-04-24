@@ -5,40 +5,88 @@ import (
 )
 
 type kitchen struct {
-	ctx   *core.Context
-	clerk core.Colleague
+	// context
+	ctx *core.Context
 
-	req  chan *core.OrderRequest
-	stop chan struct{}
+	// members
+	cookMgr    core.Colleague
+	courierMgr core.Colleague
+
+	orderChan chan *core.Order
+	stopChan  chan struct{}
 }
 
-func NewKitchen(ctx *core.Context,
-	clerk, cookMgr, courierMgr core.Colleague) *kitchen {
-
-	clerk.AddSuccessor(cookMgr)
-	clerk.AddSuccessor(courierMgr)
-	return &kitchen{
-		ctx:   ctx,
-		clerk: clerk,
+func NewKitchen(ctx *core.Context, cookMgr, courierMgr core.Colleague) *kitchen {
+	k := &kitchen{
+		ctx:        ctx,
+		cookMgr:    cookMgr,
+		courierMgr: courierMgr,
 	}
+	cookMgr.SetKitchen(k)
+	courierMgr.SetKitchen(k)
+	return k
 }
 
 func (k *kitchen) PlaceOrder(req *core.OrderRequest) error {
 	k.ctx.Log.WithField("ID", req.ID).Info("receive order")
 	order, err := newOrder(req)
 	if err != nil {
+		ctx.Logger.WithError(err).Warn("invalid order request")
 		return err
 	}
-	k.clerk.Notify(order)
+	k.Send(order)
 	return nil
 }
 
-func (k *kitchen) Run() {
+func (k *kitchen) Send(order *core.Order) {
+	k.orderChan <- order
+}
 
+func (k *kitchen) Run() *kitchen {
+	go func() {
+		k.orderChan = make(chan *core.Order, 1)
+		k.stopChan = make(chan struct{}, 1)
+		for {
+			// two layer select to make sure order's
+			//   priority is higher than stop.
+			// in order that
+			select {
+			case order := <-k.orderChan:
+				k.dispatch(order)
+			default:
+				select {
+				case order := <-k.orderChan:
+					k.dispatch(order)
+				case <-k.stopChan:
+					break
+				}
+			}
+		}
+		close(k.stopChan)
+		close(k.orderChan)
+	}()
+	return k
 }
 
 func (k *kitchen) Stop() {
+	k.cookMgr.GetOffWork()
+	k.courierMgr.GetOffWork()
+	k.stopChan <- struct{}{}
+}
 
+func (k *kitchen) dispatch(order *core.Order) {
+	switch order.Status {
+	case core.Accepted:
+		//
+		k.cookMgr.Notify(order)
+		k.courierMgr.Notify(order)
+	case core.Cooked:
+		// put onto shelve
+	case core.Picking:
+		// remove from shelve
+	case core.Discarded:
+	case core.Delivered:
+	}
 }
 
 var tempNames = map[string]core.OrderTemp{
@@ -58,5 +106,8 @@ func newOrder(req *core.OrderRequest) (*core.Order, error) {
 		Temp:       temp,
 		ShelfLife:  req.ShelfLife,
 		RemainLefe: req.ShelfLife,
+
+		WaitCook: make(chan struct{}, 1),
+		WaitPick: make(chan struct{}, 1),
 	}, nil
 }

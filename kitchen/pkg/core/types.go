@@ -19,16 +19,18 @@ const (
 	Cold
 	Frozen
 	InvalidTemp
+	CountTempType = InvalidTemp
 )
 
 type OrderStatus int
 
 const (
 	Accepted OrderStatus = iota
-	Cooking
+	Cooked
 	OnShelf
-	Dispatched
+	Picking
 	Discarded
+	Delivered
 )
 
 type Order struct {
@@ -41,43 +43,45 @@ type Order struct {
 	StartTime  time.Time
 	UpdateTime time.Time
 	Status     OrderStatus
+
+	WaitCook chan struct{}
 }
 
 func (o *Order) Value() float64 {
 	return float64(o.RemainLefe) / float64(o.ShelfLife)
 }
 
-/*
 type Kitchen interface {
-	PlaceOrder(*OrderRequest)
+	Send(*Order)
 }
 
-type ShelveMgr interface {
-	Put(*Order)
-	Pick(*Order) error
-}
-*/
-
-// abstract interface of cook, shelfPutter, shelfPicker, courier
+// abstract interface of cook, courier
 type Colleague interface {
 	Notify(*Order)
-	AddSuccessor(Colleague)
+	SetKitchen(Kitchen)
+	GetOffWork()
 }
 
 type BaseColleague struct {
-	colleagues []Colleague
+	Kitchen
 }
 
 func NewBaseColleague() *BaseColleague {
-	return &BaseColleague{colleagues: []Colleague{}}
+	return BaseColleague{}
 }
 
-func (bc *BaseColleague) Send(order *Order) {
-	for _, colleague := range bc.colleagues {
-		colleague.Notify(order)
-	}
+func (bc *BaseColleague) SetKitchen(k Kitchen) {
+	bc.Kitchen = k
 }
 
-func (bc *BaseColleague) AddSuccessor(colleague Colleague) {
-	bc.colleagues = append(bc.colleagues, colleague)
+type job struct {
+	f func()
+}
+
+func NewJob(f func()) *job {
+	return &job{f: f}
+}
+
+func (j *job) Do() {
+	j.f()
 }

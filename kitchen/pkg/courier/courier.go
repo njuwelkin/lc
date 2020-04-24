@@ -23,23 +23,9 @@ func NewCourierMgr(ctx *core.Context) *courierMgr {
 }
 
 func (c *courierMgr) Notify(order *core.Order) {
-	c.couriers.InsertJob(newCourierJob(c, order))
-}
-
-// implement Job interface of worker_pool
-type courierJob struct {
-	mgr   *courierMgr
-	order *core.Order
-}
-
-func newCourierJob(mgr *courierMgr, order *core.Order) *courierJob {
-	return &courierJob{
-		mgr:   mgr,
-		order: order,
-	}
-}
-
-func (job *courierJob) Do() {
-	time.Sleep(time.Second * time.Duration(2+rand.Intn(5)))
-	job.mgr.Send(job.order)
+	c.couriers.InsertJob(core.NewJob(func() {
+		time.Sleep(time.Second * time.Duration(2+rand.Intn(5)))
+		order.Status = core.Picking
+		c.Kitchen.Send(order)
+	}))
 }
