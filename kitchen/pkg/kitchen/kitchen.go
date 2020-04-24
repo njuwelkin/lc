@@ -7,6 +7,9 @@ import (
 type kitchen struct {
 	ctx   *core.Context
 	clerk core.Colleague
+
+	req  chan *core.OrderRequest
+	stop chan struct{}
 }
 
 func NewKitchen(ctx *core.Context,
@@ -28,6 +31,14 @@ func (k *kitchen) PlaceOrder(req *core.OrderRequest) error {
 	}
 	k.clerk.Notify(order)
 	return nil
+}
+
+func (k *kitchen) Run() {
+
+}
+
+func (k *kitchen) Stop() {
+
 }
 
 var tempNames = map[string]core.OrderTemp{

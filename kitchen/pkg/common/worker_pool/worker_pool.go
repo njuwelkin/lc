@@ -1,6 +1,8 @@
 package worker_pool
 
-import ()
+import (
+	"sync"
+)
 
 type JobStatus int
 
@@ -14,16 +16,16 @@ type Job interface {
 	Do()
 }
 
-type statusJob interface {
-	Job
-	SetStatus(status JobStatus)
-}
-
 type WorkerPool struct {
 	jobChannel  chan Job
 	quitChannel chan bool
 	workers     int
 	chanSize    int
+
+	waitGroup sync.WaitGroup
+
+	running      bool
+	runningMutex sync.Mutex
 }
 
 func NewWorkerPool(workers int, chanSize int) *WorkerPool {
@@ -32,45 +34,62 @@ func NewWorkerPool(workers int, chanSize int) *WorkerPool {
 		quitChannel: make(chan bool),
 		workers:     workers,
 		chanSize:    chanSize,
+		running:     false,
 	}
 }
 
 func (workerPool *WorkerPool) execute() {
+	workerPool.waitGroup.Add(1)
 	for {
+		// two layer of select to make sure jobChannel's priority is heigher
+		// worker can quit only when no jobs pending
 		select {
 		case job := <-workerPool.jobChannel:
-			if sj, ok := job.(statusJob); ok {
-				sj.SetStatus(JobStatusRunning)
-			}
-
 			job.Do()
-
-			if sj, ok := job.(statusJob); ok {
-				sj.SetStatus(JobStatusDone)
+		default:
+			select {
+			case job := <-workerPool.jobChannel:
+				job.Do()
+			case <-workerPool.quitChannel:
+				break
 			}
-		case <-workerPool.quitChannel:
-			break
 		}
 	}
+	workerPool.waitGroup.Done()
 }
 
 func (workerPool *WorkerPool) Run() *WorkerPool {
-	for i := 0; i < workerPool.workers; i++ {
-		go workerPool.execute()
+	workerPool.runningMutex.Lock()
+	defer workerPool.runningMutex.Unlock()
+
+	if !workerPool.running {
+		for i := 0; i < workerPool.workers; i++ {
+			go workerPool.execute()
+		}
+		running = true
 	}
 	return workerPool
 }
 
 func (workerPool *WorkerPool) InsertJob(job Job) {
-	if sj, ok := job.(statusJob); ok {
-		sj.SetStatus(JobStatusWaiting)
-	}
+	workerPool.runningMutex.Lock()
+	defer workerPool.runningMutex.Unlock()
 
-	workerPool.jobChannel <- job
+	if workerPool.running {
+		workerPool.jobChannel <- job
+	}
 }
 
 func (workerPool *WorkerPool) Quit() {
-	for i := 0; i < workerPool.workers; i++ {
-		workerPool.quitChannel <- true
+	workerPool.runningMutex.Lock()
+	defer workerPool.runningMutex.Unlock()
+
+	if workerPool.running {
+		workerPool.running = false
+		for i := 0; i < workerPool.workers; i++ {
+			workerPool.quitChannel <- true
+		}
+		// block until all works quit
+		workerPool.waitGroup.Wait()
 	}
 }
