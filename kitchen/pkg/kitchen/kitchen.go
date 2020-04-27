@@ -46,6 +46,10 @@ func (k *kitchen) Run() *kitchen {
 	go func() {
 		k.orderChan = make(chan *core.Order, 1)
 		k.stopChan = make(chan struct{}, 1)
+		defer func() {
+			close(k.stopChan)
+			close(k.orderChan)
+		}()
 		for {
 			// two layer select to make sure order's
 			//   priority is higher than stop.
@@ -58,12 +62,10 @@ func (k *kitchen) Run() *kitchen {
 				case order := <-k.orderChan:
 					k.dispatch(order)
 				case <-k.stopChan:
-					break
+					return
 				}
 			}
 		}
-		close(k.stopChan)
-		close(k.orderChan)
 	}()
 	return k
 }
