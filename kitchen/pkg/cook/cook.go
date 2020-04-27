@@ -21,6 +21,10 @@ func (c *cookMgr) Notify(order *core.Order) {
 	c.Kitchen.Send(order)
 }
 
+func (c *cookMgr) GetOffWork() {
+}
+
 func (c *cookMgr) cook(order *core.Order) {
+	c.ctx.Log.Info("cook")
 	order.Status = core.Cooked
 }

@@ -11,6 +11,7 @@ import (
 type courierMgr struct {
 	*core.BaseColleague
 	ctx      *core.Context
+	kitchen  core.Kitchen
 	couriers *worker_pool.WorkerPool
 }
 
@@ -24,8 +25,13 @@ func NewCourierMgr(ctx *core.Context) *courierMgr {
 
 func (c *courierMgr) Notify(order *core.Order) {
 	c.couriers.InsertJob(core.NewJob(func() {
+		c.ctx.Log.Info("pick")
 		time.Sleep(time.Second * time.Duration(2+rand.Intn(5)))
-		order.Status = core.Picking
+		order.Status = core.Picked
 		c.Kitchen.Send(order)
 	}))
+}
+
+func (c *courierMgr) GetOffWork() {
+	c.couriers.Quit()
 }

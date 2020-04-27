@@ -1,6 +1,7 @@
 package worker_pool
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -40,6 +41,7 @@ func NewWorkerPool(workers int, chanSize int) *WorkerPool {
 
 func (workerPool *WorkerPool) execute() {
 	workerPool.waitGroup.Add(1)
+	defer workerPool.waitGroup.Done()
 	for {
 		// two layer of select to make sure jobChannel's priority is heigher
 		// worker can quit only when no jobs pending
@@ -51,11 +53,11 @@ func (workerPool *WorkerPool) execute() {
 			case job := <-workerPool.jobChannel:
 				job.Do()
 			case <-workerPool.quitChannel:
-				break
+				fmt.Println("quit")
+				return
 			}
 		}
 	}
-	workerPool.waitGroup.Done()
 }
 
 func (workerPool *WorkerPool) Run() *WorkerPool {

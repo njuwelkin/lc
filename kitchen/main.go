@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
 
-	"github.com/njuwelkin/lc/kitchen/pkg/clerk"
 	"github.com/njuwelkin/lc/kitchen/pkg/cook"
 	"github.com/njuwelkin/lc/kitchen/pkg/core"
 	"github.com/njuwelkin/lc/kitchen/pkg/courier"
@@ -35,19 +35,24 @@ func main() {
 		return
 	}
 
+	// build kitchen
+	cookMgr := cook.NewCookMgr(ctx)
+	courierMgr := courier.NewCourierMgr(ctx)
+	kitchen := kitchen.NewKitchen(ctx, cookMgr, courierMgr).Run()
+
 	// parse orders
 	orders := []core.OrderRequest{}
 	err = parser.Parse(orderPath, &orders)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
-
-	clerk := clerk.NewClerk(ctx)
-	cookMgr := cook.NewCookMgr(ctx)
-	courierMgr := courier.NewCourierMgr(ctx)
-	kitchen := kitchen.NewKitchen(ctx, clerk, cookMgr, courierMgr)
-
+	fmt.Println(len(orders))
 	for _, order := range orders {
 		kitchen.PlaceOrder(&order)
 	}
+
+	kitchen.Stop()
+	fmt.Println("stopped")
+	time.Sleep(time.Second)
 }

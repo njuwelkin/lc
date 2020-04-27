@@ -31,7 +31,7 @@ func (k *kitchen) PlaceOrder(req *core.OrderRequest) error {
 	k.ctx.Log.WithField("ID", req.ID).Info("receive order")
 	order, err := newOrder(req)
 	if err != nil {
-		ctx.Logger.WithError(err).Warn("invalid order request")
+		k.ctx.Log.WithError(err).Warn("invalid order request")
 		return err
 	}
 	k.Send(order)
@@ -44,8 +44,8 @@ func (k *kitchen) Send(order *core.Order) {
 
 func (k *kitchen) Run() *kitchen {
 	go func() {
-		k.orderChan = make(chan *core.Order, 1)
-		k.stopChan = make(chan struct{}, 1)
+		k.orderChan = make(chan *core.Order, 10000)
+		k.stopChan = make(chan struct{})
 		defer func() {
 			close(k.stopChan)
 			close(k.orderChan)
@@ -60,8 +60,10 @@ func (k *kitchen) Run() *kitchen {
 			default:
 				select {
 				case order := <-k.orderChan:
+					k.ctx.Log.Info("receive order msg")
 					k.dispatch(order)
 				case <-k.stopChan:
+					k.ctx.Log.Info("receive stop msg")
 					return
 				}
 			}
@@ -76,16 +78,21 @@ func (k *kitchen) Stop() {
 	k.stopChan <- struct{}{}
 }
 
+func (k *kitchen) GetShelf() core.Shelf {
+	return nil
+}
+
 func (k *kitchen) dispatch(order *core.Order) {
 	switch order.Status {
 	case core.Accepted:
-		//
+		// notify cook manager to process the order
 		k.cookMgr.Notify(order)
+		// notify courier manager to dispatch a courier
 		k.courierMgr.Notify(order)
 	case core.Cooked:
-		// put onto shelve
-	case core.Picking:
-		// remove from shelve
+		// notify shelf cleaner to schedule a clean job
+	case core.Picked:
+		// notify shelf cleaner to remove the clean job
 	case core.Discarded:
 	case core.Delivered:
 	}
@@ -109,7 +116,6 @@ func newOrder(req *core.OrderRequest) (*core.Order, error) {
 		ShelfLife:  req.ShelfLife,
 		RemainLefe: req.ShelfLife,
 
-		WaitCook: make(chan struct{}, 1),
-		WaitPick: make(chan struct{}, 1),
+		//WaitCook: make(chan struct{}, 1),
 	}, nil
 }

@@ -28,7 +28,7 @@ const (
 	Accepted OrderStatus = iota
 	Cooked
 	OnShelf
-	Picking
+	Picked
 	Discarded
 	Delivered
 )
@@ -51,8 +51,14 @@ func (o *Order) Value() float64 {
 	return float64(o.RemainLefe) / float64(o.ShelfLife)
 }
 
+type Shelf interface {
+	Put(*Order)
+	Pick(id string)
+}
+
 type Kitchen interface {
 	Send(*Order)
+	GetShelf() Shelf
 }
 
 // abstract interface of cook, courier
@@ -67,7 +73,7 @@ type BaseColleague struct {
 }
 
 func NewBaseColleague() *BaseColleague {
-	return BaseColleague{}
+	return &BaseColleague{}
 }
 
 func (bc *BaseColleague) SetKitchen(k Kitchen) {
