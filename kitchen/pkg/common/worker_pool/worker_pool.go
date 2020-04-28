@@ -7,12 +7,6 @@ import (
 
 type JobStatus int
 
-const (
-	JobStatusWaiting JobStatus = iota
-	JobStatusRunning
-	JobStatusDone
-)
-
 type Job interface {
 	Do()
 }
@@ -94,4 +88,16 @@ func (workerPool *WorkerPool) Quit() {
 		// block until all works quit
 		workerPool.waitGroup.Wait()
 	}
+}
+
+type simpleJob struct {
+	f func()
+}
+
+func (j *simpleJob) Do() {
+	j.f()
+}
+
+func (workerPool *WorkerPool) InsertFuncJob(f func()) {
+	workerPool.InsertJob(&simpleJob{f: f})
 }

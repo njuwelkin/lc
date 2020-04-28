@@ -27,8 +27,6 @@ type OrderStatus int
 const (
 	Accepted OrderStatus = iota
 	Cooked
-	OnShelf
-	Picked
 	Discarded
 	Delivered
 )
@@ -44,7 +42,7 @@ type Order struct {
 	UpdateTime time.Time
 	Status     OrderStatus
 
-	WaitCook chan struct{}
+	IsOnShelf chan struct{}
 }
 
 func (o *Order) Value() float64 {

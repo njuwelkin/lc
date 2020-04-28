@@ -16,11 +16,8 @@ func usage() {
 	fmt.Println("kitchen inputfile [-conf confpath]")
 }
 
-var (
-	configPath = flag.String("conf", "./conf.yaml", "path to the config file")
-)
-
 func main() {
+	configPath := flag.String("conf", "./conf.yaml", "path to the config file")
 	flag.Parse()
 	args := flag.Args()
 	if len(args) < 1 {
@@ -50,9 +47,9 @@ func main() {
 	fmt.Println(len(orders))
 	for _, order := range orders {
 		kitchen.PlaceOrder(&order)
+		time.Sleep(time.Duration(ctx.IngestInterval) * time.Millisecond)
 	}
 
 	kitchen.Stop()
 	fmt.Println("stopped")
-	time.Sleep(time.Second)
 }

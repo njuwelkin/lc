@@ -18,6 +18,7 @@ func NewCookMgr(ctx *core.Context) *cookMgr {
 
 func (c *cookMgr) Notify(order *core.Order) {
 	c.cook(order)
+	//c.Kitchen.GetShelf().Put(order)
 	c.Kitchen.Send(order)
 }
 

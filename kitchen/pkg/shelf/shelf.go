@@ -1,7 +1,7 @@
 package shelf
 
 import (
-	"github.com/njuwelkin/lc/orders/pkg/core"
+	"github.com/njuwelkin/lc/kitchen/pkg/core"
 	"sync"
 )
 
@@ -12,8 +12,8 @@ type shelf struct {
 
 func newShelf(capacity int) {
 	return &shelf{
-		content:  make([]*core.Order, capacity),
-		occupied: 0,
+		content: make([]*core.Order, capacity),
+		used:    0,
 	}
 }
 
@@ -98,7 +98,7 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 
-	temp := order.GetTemp()
+	temp := order.Temp
 	if !mgr.singleShelves[temp].isFull() {
 		mgr.singleShelves[temp].add(order)
 		return

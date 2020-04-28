@@ -8,12 +8,12 @@ type kitchen struct {
 	// context
 	ctx *core.Context
 
-	// members
+	// colleagues
 	cookMgr    core.Colleague
 	courierMgr core.Colleague
 
-	orderChan chan *core.Order
-	stopChan  chan struct{}
+	countDelieve int
+	countDiscard int
 }
 
 func NewKitchen(ctx *core.Context, cookMgr, courierMgr core.Colleague) *kitchen {
@@ -39,43 +39,16 @@ func (k *kitchen) PlaceOrder(req *core.OrderRequest) error {
 }
 
 func (k *kitchen) Send(order *core.Order) {
-	k.orderChan <- order
+	k.dispatch(order)
 }
 
 func (k *kitchen) Run() *kitchen {
-	go func() {
-		k.orderChan = make(chan *core.Order, 10000)
-		k.stopChan = make(chan struct{})
-		defer func() {
-			close(k.stopChan)
-			close(k.orderChan)
-		}()
-		for {
-			// two layer select to make sure order's
-			//   priority is higher than stop.
-			// in order that
-			select {
-			case order := <-k.orderChan:
-				k.dispatch(order)
-			default:
-				select {
-				case order := <-k.orderChan:
-					k.ctx.Log.Info("receive order msg")
-					k.dispatch(order)
-				case <-k.stopChan:
-					k.ctx.Log.Info("receive stop msg")
-					return
-				}
-			}
-		}
-	}()
 	return k
 }
 
 func (k *kitchen) Stop() {
 	k.cookMgr.GetOffWork()
 	k.courierMgr.GetOffWork()
-	k.stopChan <- struct{}{}
 }
 
 func (k *kitchen) GetShelf() core.Shelf {
@@ -90,11 +63,12 @@ func (k *kitchen) dispatch(order *core.Order) {
 		// notify courier manager to dispatch a courier
 		k.courierMgr.Notify(order)
 	case core.Cooked:
-		// notify shelf cleaner to schedule a clean job
-	case core.Picked:
-		// notify shelf cleaner to remove the clean job
+		// wakeup waiting courier
+		order.IsOnShelf <- struct{}{}
 	case core.Discarded:
+		k.countDiscard++
 	case core.Delivered:
+		k.countDelieve++
 	}
 }
 
@@ -116,6 +90,6 @@ func newOrder(req *core.OrderRequest) (*core.Order, error) {
 		ShelfLife:  req.ShelfLife,
 		RemainLefe: req.ShelfLife,
 
-		//WaitCook: make(chan struct{}, 1),
+		IsOnShelf: make(chan struct{}, 1),
 	}, nil
 }
