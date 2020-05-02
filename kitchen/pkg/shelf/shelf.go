@@ -116,9 +116,9 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 
-	mgr.ctx.Log.Infof("put order %s", order.ID)
+	mgr.ctx.Log.Infof("put order %s, %p", order.ID, order)
 	defer func() {
-		//mgr.ctx.Log.Infof("put order %s on %+v", order.ID, mgr.index[order.ID])
+		mgr.ctx.Log.Infof("put order %s on %+v", order.ID, mgr.index[order.ID])
 		//mgr.ctx.Log.Infof("index: %v", mgr.index)
 	}()
 	/*
@@ -155,6 +155,10 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 			!mgr.overflowShelf[temp].isEmpty() {
 
 			toMove := mgr.overflowShelf.remove(temp, 0)
+			if len(mgr.overflowShelf[temp]) > 0 {
+				id := mgr.overflowShelf[temp][0].ID
+				mgr.index[id] = shelfLocation{overflow, temp, 0}
+			}
 			toMove.UpdateRemainLife(now, true)
 			idx := mgr.singleShelves[temp].add(toMove)
 			mgr.index[toMove.ID] = shelfLocation{singleTemp, temp, idx}
@@ -172,11 +176,11 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 	for temp = core.Hot; temp < core.InvalidTemp; temp++ {
 		shelf := mgr.overflowShelf[temp]
 		for i := 0; i < len(shelf); i++ {
-			mgr.ctx.Log.Infof("order: %+v", order)
+			//mgr.ctx.Log.Infof("order: %+v", order)
 			shelf[i].UpdateRemainLife(now, true)
-			mgr.ctx.Log.Infof("updated order: %+v", order)
+			//mgr.ctx.Log.Infof("updated order: %+v", order)
 			value := shelf[i].EstimatePickValue(true)
-			mgr.ctx.Log.Infof("value: %f", value)
+			//mgr.ctx.Log.Infof("value: %f", value)
 			if value < minValue {
 				minValue = value
 				toDiscard = shelf[i]
@@ -184,11 +188,17 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 			}
 		}
 	}
-	mgr.ctx.Log.Infof("toDiscard: %+v", toDiscard)
+	//mgr.ctx.Log.Infof("toDiscard: %+v", toDiscard)
+	mgr.ctx.Log.Infof("discard order: %s", toDiscard.ID)
 	mgr.overflowShelf[toDiscard.Temp].remove(idx)
 	delete(mgr.index, toDiscard.ID)
+	if len(mgr.overflowShelf[toDiscard.Temp]) > idx {
+		id := mgr.overflowShelf[toDiscard.Temp][idx].ID
+		mgr.index[id] = shelfLocation{overflow, toDiscard.Temp, 0}
+	}
 	idx = mgr.overflowShelf.add(order)
 	mgr.index[order.ID] = shelfLocation{overflow, order.Temp, idx}
+	mgr.ctx.Log.Infof("orderID: %s", mgr.overflowShelf[order.Temp][idx].ID)
 }
 
 func (mgr *shelfMgr) Pick(orderID string) error {
@@ -202,17 +212,19 @@ func (mgr *shelfMgr) Pick(orderID string) error {
 	}
 	mgr.ctx.Log.Infof("Pick order %s from %+v", orderID, loc)
 	if loc.cate == overflow {
-		mgr.ctx.Log.Infof("%v", mgr.overflowShelf)
+		mgr.ctx.Log.Infof("overflow shelf: %v", mgr.overflowShelf)
 		mgr.overflowShelf[loc.temp].remove(loc.idx)
 		if len(mgr.overflowShelf[loc.temp]) > loc.idx {
 			id := mgr.overflowShelf[loc.temp][loc.idx].ID
+			mgr.ctx.Log.Infof("overflow move order %s from %v to %v", id, mgr.index[id], loc)
 			mgr.index[id] = loc
 		}
 	} else {
-		mgr.ctx.Log.Infof("%v", mgr.singleShelves)
+		mgr.ctx.Log.Infof("singleshelf: %v", mgr.singleShelves)
 		mgr.singleShelves[loc.temp].remove(loc.idx)
 		if len(mgr.singleShelves[loc.temp]) > loc.idx {
 			id := mgr.singleShelves[loc.temp][loc.idx].ID
+			mgr.ctx.Log.Infof("singlTemp move order %s from %v to %v", id, mgr.index[id], loc)
 			mgr.index[id] = loc
 		}
 	}
