@@ -23,20 +23,37 @@ func NewCourierMgr(ctx *core.Context) *courierMgr {
 }
 
 func (c *courierMgr) Notify(order *core.Order) {
+	order.EstimatePickTime = time.Now().Add(time.Hour * 100)
 	c.couriers.InsertFuncJob(func() {
 		// go to kitchen
-		c.ctx.Log.Info("picking")
-		time.Sleep(time.Second * time.Duration(2+rand.Intn(5)))
+		if !gotoKitchen(order) {
+			return
+		}
 		// pick the food
-		//c.Kitchen.GetShelf().Pick(order.ID)
+		c.Kitchen.GetShelf().Pick(order.ID)
 		// update order status and notify msg center
-		c.ctx.Log.Info("picked")
-		order.Status = core.Delivered
-		c.Kitchen.Send(order)
-		count++
+		//c.ctx.Log.Info("picked")
+		order.Status = "delivered"
+		c.Kitchen.Send(order, core.Delivered)
 	})
 }
 
 func (c *courierMgr) GetOffWork() {
 	c.couriers.Quit()
+}
+
+func gotoKitchen(order *core.Order) bool {
+	timeOnTheWay := time.Second * time.Duration(2+rand.Intn(5))
+	order.EstimatePickTime = time.Now().Add(timeOnTheWay)
+	timer := time.NewTimer(timeOnTheWay)
+	defer timer.Stop()
+
+	select {
+	case <-timer.C:
+		// arrive at the kitchen
+		return true
+	case <-order.IsCanceled:
+		// order is discarded, terminate the task
+		return false
+	}
 }

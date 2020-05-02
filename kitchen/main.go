@@ -10,6 +10,7 @@ import (
 	"github.com/njuwelkin/lc/kitchen/pkg/courier"
 	"github.com/njuwelkin/lc/kitchen/pkg/kitchen"
 	"github.com/njuwelkin/lc/kitchen/pkg/parser"
+	"github.com/njuwelkin/lc/kitchen/pkg/shelf"
 )
 
 func usage() {
@@ -35,7 +36,8 @@ func main() {
 	// build kitchen
 	cookMgr := cook.NewCookMgr(ctx)
 	courierMgr := courier.NewCourierMgr(ctx)
-	kitchen := kitchen.NewKitchen(ctx, cookMgr, courierMgr).Run()
+	shelf := shelf.NewShelfMgr(ctx)
+	kitchen := kitchen.NewKitchen(ctx, cookMgr, courierMgr, shelf).Run()
 
 	// parse orders
 	orders := []core.OrderRequest{}

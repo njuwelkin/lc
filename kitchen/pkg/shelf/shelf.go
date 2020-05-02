@@ -3,81 +3,94 @@ package shelf
 import (
 	"github.com/njuwelkin/lc/kitchen/pkg/core"
 	"sync"
+	"time"
 )
 
-type shelf struct {
-	content []*core.Order
-	used    int
+type shelf []*core.Order
+
+func newShelf(capacity int) shelf {
+	// create a shelf with max capacity: capacity
+	return make([]*core.Order, 0, capacity)
 }
 
-func newShelf(capacity int) {
-	return &shelf{
-		content: make([]*core.Order, capacity),
-		used:    0,
-	}
-}
-
-func (shelf *shelf) add(order *core.Order) {
-	shelf.content[shelf.used] = order
-	used++
+func (shelf *shelf) add(order *core.Order) int {
+	*shelf = append(*shelf, order)
+	return len(*shelf) - 1
 }
 
 func (shelf *shelf) remove(idx int) *core.Order {
-	ret := shelf.content[idx]
-	shelf.content[idx] = shelf.content[shelf.used-1]
-	shelf.used--
+	ret := (*shelf)[idx]
+	(*shelf)[idx] = (*shelf)[len(*shelf)-1]
+	*shelf = (*shelf)[:len(*shelf)-1]
 	return ret
 }
 
-func (shelf *shelf) isFull() bool {
-	return shelf.used == len(shelf.content)
+func (shelf shelf) isFull() bool {
+	return len(shelf) == cap(shelf)
 }
 
-func (shelf *shelf) isEmpty() bool {
-	return shelf.used == 0
+func (shelf shelf) isEmpty() bool {
+	return len(shelf) == 0
 }
 
-type shelves []*shelf
+type shelves []shelf
 
-func newShelves(capHot, capCold, capFrozen int) *singleTempShelves {
-	ret := singleTempShelves(make([]*shelf, core.InvalidTemp))
-	ret[core.hot] = newshelf(caphot)
-	ret[core.cold] = newshelf(capcold)
-	ret[core.frozen] = newshelf(capfrozen)
-	return &ret
+func newShelves(capHot, capCold, capFrozen int) shelves {
+	ret := make([]shelf, core.InvalidTemp)
+	ret[core.Hot] = newShelf(capHot)
+	ret[core.Cold] = newShelf(capCold)
+	ret[core.Frozen] = newShelf(capFrozen)
+	return ret
 }
 
-func (s *shelves) remove(temp core.OrderTemp, idx int) *core.Order {
+func (s shelves) remove(temp core.OrderTemp, idx int) *core.Order {
 	return s[temp].remove(idx)
 }
 
-type sigleTempShelves shelves
+type singleTempShelves shelves
 
-func newSingleTempShelves(capHot, capCold, capFrozen int) *sigleTempShelves {
-	return newShelves(capHot, capCold, capFrozen)
+func newSingleTempShelves(capHot, capCold, capFrozen int) singleTempShelves {
+	return singleTempShelves(newShelves(capHot, capCold, capFrozen))
 }
 
 type overFlowShelf shelves
 
-func newOverFlowShelf(capacity int) *overFlowShelf {
-	return newShelves(capacity, capacity, capacity)
+func newOverFlowShelf(capacity int) overFlowShelf {
+	return overFlowShelf(newShelves(capacity, capacity, capacity))
 }
 
-func (shelf *overFlowShelf) add(order *core.Order) bool {
-	if shelf.isFull() {
-		return false
-	}
-	return ret.content[order.GetTemp()].add(order)
+func (shelf overFlowShelf) add(order *core.Order) int {
+	return shelf[order.Temp].add(order)
 }
 
-func (shelf *overFlowShelf) isFull() bool {
-	return shelf.hot.used+shelf.cold.used+shelf.frozen.used == len(hot.content)
+func (shelf overFlowShelf) isFull() bool {
+	return len(shelf[core.Hot])+len(shelf[core.Cold])+len(shelf[core.Frozen]) == cap(shelf[core.Hot])
+}
+
+func (shelf overFlowShelf) remove(temp core.OrderTemp, idx int) *core.Order {
+	return shelf[temp].remove(idx)
+}
+
+type shelfCat int
+
+const (
+	singleTemp shelfCat = iota
+	overflow
+)
+
+type shelfLocation struct {
+	cate shelfCat
+	temp core.OrderTemp
+	idx  int
 }
 
 type shelfMgr struct {
-	ctx           *core.Context
-	singleShelves *singleTempShelves
-	overflowShelf *overFlowShelf
+	ctx     *core.Context
+	kitchen core.Kitchen
+
+	singleShelves singleTempShelves
+	overflowShelf overFlowShelf
+	index         map[string]shelfLocation
 
 	mutex sync.Mutex
 }
@@ -91,40 +104,118 @@ func NewShelfMgr(ctx *core.Context) *shelfMgr {
 		ctx:           ctx,
 		singleShelves: newSingleTempShelves(capHot, capCold, capFrozen),
 		overflowShelf: newOverFlowShelf(capOverflow),
+		index:         map[string]shelfLocation{},
 	}
+}
+
+func (mgr *shelfMgr) SetKitchen(kitchen core.Kitchen) {
+	mgr.kitchen = kitchen
 }
 
 func (mgr *shelfMgr) Put(order *core.Order) {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 
+	mgr.ctx.Log.Infof("put order %s", order.ID)
+	defer func() {
+		//mgr.ctx.Log.Infof("put order %s on %+v", order.ID, mgr.index[order.ID])
+		//mgr.ctx.Log.Infof("index: %v", mgr.index)
+	}()
+	/*
+		log := func(s string) {
+			if order.ID == "68515b89-96bf-48b6-a07c-68cf17ca3c25" {
+				mgr.ctx.Log.Info("%s", s)
+			}
+		}
+	*/
+	//id := "dcafe7ca-f7a7-4262-9b14-ab19729b2055"
+
+	now := time.Now()
 	temp := order.Temp
+	order.UpdateTime = now
+	order.RemainLife = order.ShelfLife
+
+	// try placing on a shelf that matches the order’s temperature.
 	if !mgr.singleShelves[temp].isFull() {
-		mgr.singleShelves[temp].add(order)
+		idx := mgr.singleShelves[temp].add(order)
+		mgr.index[order.ID] = shelfLocation{singleTemp, temp, idx}
 		return
 	}
+
+	// try placing on the overflow shelf
 	if !mgr.overflowShelf.isFull() {
-		mgr.overflowShelf.add(order)
+		idx := mgr.overflowShelf.add(order)
+		mgr.index[order.ID] = shelfLocation{overflow, temp, idx}
 		return
 	}
+
+	// try moving an existing order on the overflow to an allowable shelf with room
 	for temp = core.Hot; temp < core.InvalidTemp; temp++ {
 		if !mgr.singleShelves[temp].isFull() &&
 			!mgr.overflowShelf[temp].isEmpty() {
 
-			tmp := mgr.overflowShelf.remove(temp, 0)
-			mgr.singleShelves[temp].add(tmp)
-			mgr.overflowShelf.add(order)
+			toMove := mgr.overflowShelf.remove(temp, 0)
+			toMove.UpdateRemainLife(now, true)
+			idx := mgr.singleShelves[temp].add(toMove)
+			mgr.index[toMove.ID] = shelfLocation{singleTemp, temp, idx}
+			mgr.ctx.Log.Infof("move order %s", toMove.ID)
+			idx = mgr.overflowShelf.add(order)
+			mgr.index[order.ID] = shelfLocation{overflow, temp, idx}
 			return
 		}
 	}
-	// discard one
+
+	// discard an order with least value from the overflow shelf
+	minValue := 1.0
+	var idx int
+	var toDiscard *core.Order
 	for temp = core.Hot; temp < core.InvalidTemp; temp++ {
 		shelf := mgr.overflowShelf[temp]
+		for i := 0; i < len(shelf); i++ {
+			mgr.ctx.Log.Infof("order: %+v", order)
+			shelf[i].UpdateRemainLife(now, true)
+			mgr.ctx.Log.Infof("updated order: %+v", order)
+			value := shelf[i].EstimatePickValue(true)
+			mgr.ctx.Log.Infof("value: %f", value)
+			if value < minValue {
+				minValue = value
+				toDiscard = shelf[i]
+				idx = i
+			}
+		}
 	}
+	mgr.ctx.Log.Infof("toDiscard: %+v", toDiscard)
+	mgr.overflowShelf[toDiscard.Temp].remove(idx)
+	delete(mgr.index, toDiscard.ID)
+	idx = mgr.overflowShelf.add(order)
+	mgr.index[order.ID] = shelfLocation{overflow, order.Temp, idx}
 }
 
-func (mgr *shelfMgr) Pick(order *core.Order) error {
+func (mgr *shelfMgr) Pick(orderID string) error {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
+
+	loc, found := mgr.index[orderID]
+	if !found {
+		// order has been discarded
+		return core.ResourceNotFound.WithField("ID", orderID)
+	}
+	mgr.ctx.Log.Infof("Pick order %s from %+v", orderID, loc)
+	if loc.cate == overflow {
+		mgr.ctx.Log.Infof("%v", mgr.overflowShelf)
+		mgr.overflowShelf[loc.temp].remove(loc.idx)
+		if len(mgr.overflowShelf[loc.temp]) > loc.idx {
+			id := mgr.overflowShelf[loc.temp][loc.idx].ID
+			mgr.index[id] = loc
+		}
+	} else {
+		mgr.ctx.Log.Infof("%v", mgr.singleShelves)
+		mgr.singleShelves[loc.temp].remove(loc.idx)
+		if len(mgr.singleShelves[loc.temp]) > loc.idx {
+			id := mgr.singleShelves[loc.temp][loc.idx].ID
+			mgr.index[id] = loc
+		}
+	}
+	delete(mgr.index, orderID)
 	return nil
 }
