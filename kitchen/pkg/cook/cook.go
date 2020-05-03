@@ -2,6 +2,7 @@ package cook
 
 import (
 	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"time"
 )
 
 type cookMgr struct {
@@ -16,7 +17,7 @@ func NewCookMgr(ctx *core.Context) *cookMgr {
 	}
 }
 
-func (c *cookMgr) Notify(order *core.Order) {
+func (c *cookMgr) Notify(order *core.Order, event core.Event) {
 	c.cook(order)
 	c.Kitchen.GetShelf().Put(order)
 	c.Kitchen.Send(order, core.Cooked)
@@ -27,5 +28,6 @@ func (c *cookMgr) GetOffWork() {
 
 func (c *cookMgr) cook(order *core.Order) {
 	c.ctx.Log.Info("cook")
+	time.Sleep(time.Millisecond * 100)
 	order.Status = "cooked"
 }

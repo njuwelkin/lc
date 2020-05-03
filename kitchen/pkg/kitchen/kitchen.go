@@ -2,11 +2,19 @@ package kitchen
 
 import (
 	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"time"
 )
+
+type message struct {
+	order *core.Order
+	event core.Event
+}
 
 type kitchen struct {
 	// context
-	ctx *core.Context
+	ctx    *core.Context
+	msgQue chan *message
+	stop   chan struct{}
 
 	// colleagues
 	cookMgr    core.Colleague
@@ -21,6 +29,8 @@ type kitchen struct {
 func NewKitchen(ctx *core.Context, cookMgr, courierMgr core.Colleague, shelf core.Shelf) *kitchen {
 	k := &kitchen{
 		ctx:        ctx,
+		msgQue:     make(chan *message, 4096),
+		stop:       make(chan struct{}),
 		cookMgr:    cookMgr,
 		courierMgr: courierMgr,
 		shelf:      shelf,
@@ -32,29 +42,49 @@ func NewKitchen(ctx *core.Context, cookMgr, courierMgr core.Colleague, shelf cor
 }
 
 func (k *kitchen) PlaceOrder(req *core.OrderRequest) error {
-	k.ctx.Log.WithField("ID", req.ID).Info("receive order")
 	k.ctx.Log.Infof("receive order %+v", req)
 	order, err := newOrder(req)
 	if err != nil {
 		k.ctx.Log.WithError(err).Warn("invalid order request")
 		return err
 	}
-	k.ctx.Log.Infof("new order %+v", order)
-	k.Send(order, core.Accept)
+	k.dispatch(order, core.Accept)
 	return nil
 }
 
 func (k *kitchen) Send(order *core.Order, event core.Event) {
-	go k.dispatch(order, event)
+	k.msgQue <- &message{order, event}
+}
+
+func (k *kitchen) run() {
+	for {
+		select {
+		case msg := <-k.msgQue:
+			k.dispatch(msg.order, msg.event)
+		default:
+			select {
+			case msg := <-k.msgQue:
+				k.dispatch(msg.order, msg.event)
+			case <-k.stop:
+				return
+			}
+		}
+	}
 }
 
 func (k *kitchen) Run() *kitchen {
+	go k.run()
 	return k
 }
 
 func (k *kitchen) Stop() {
+	// cooks complete existing job
 	k.cookMgr.GetOffWork()
 	k.courierMgr.GetOffWork()
+	// leave one second for the out put
+	time.Sleep(time.Second)
+	k.stop <- struct{}{}
+	k.ctx.Log.Infof("kitchen stopped, %d orders delivered, %d discarded", k.countDelieve, k.countDiscard)
 }
 
 func (k *kitchen) GetShelf() core.Shelf {
@@ -65,16 +95,17 @@ func (k *kitchen) dispatch(order *core.Order, event core.Event) {
 	switch event {
 	case core.Accept:
 		// notify cook manager to prepare the food
-		k.cookMgr.Notify(order)
+		k.cookMgr.Notify(order, event)
 		// notify courier manager to dispatch a courier
-		k.courierMgr.Notify(order)
+		k.courierMgr.Notify(order, event)
 	case core.Cooked:
 		// food is ready, wakeup waiting courier
-		order.IsOnShelf <- struct{}{}
+		//order.IsOnShelf <- struct{}{}
 		// notify cleaner to schedule a clean job
 	case core.Moved:
 		// notify cleaner to re-schedule the clean job
 	case core.Discarded:
+		k.courierMgr.Notify(order, event)
 		k.countDiscard++
 	case core.Delivered:
 		k.countDelieve++

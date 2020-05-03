@@ -117,18 +117,7 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 	defer mgr.mutex.Unlock()
 
 	mgr.ctx.Log.Infof("put order %s, %p", order.ID, order)
-	defer func() {
-		mgr.ctx.Log.Infof("put order %s on %+v", order.ID, mgr.index[order.ID])
-		//mgr.ctx.Log.Infof("index: %v", mgr.index)
-	}()
-	/*
-		log := func(s string) {
-			if order.ID == "68515b89-96bf-48b6-a07c-68cf17ca3c25" {
-				mgr.ctx.Log.Info("%s", s)
-			}
-		}
-	*/
-	//id := "dcafe7ca-f7a7-4262-9b14-ab19729b2055"
+	defer mgr.ctx.Log.Infof("order %s placed on %+v", order.ID, mgr.index[order.ID])
 
 	now := time.Now()
 	temp := order.Temp
@@ -176,11 +165,8 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 	for temp = core.Hot; temp < core.InvalidTemp; temp++ {
 		shelf := mgr.overflowShelf[temp]
 		for i := 0; i < len(shelf); i++ {
-			//mgr.ctx.Log.Infof("order: %+v", order)
 			shelf[i].UpdateRemainLife(now, true)
-			//mgr.ctx.Log.Infof("updated order: %+v", order)
 			value := shelf[i].EstimatePickValue(true)
-			//mgr.ctx.Log.Infof("value: %f", value)
 			if value < minValue {
 				minValue = value
 				toDiscard = shelf[i]
@@ -196,9 +182,9 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 		id := mgr.overflowShelf[toDiscard.Temp][idx].ID
 		mgr.index[id] = shelfLocation{overflow, toDiscard.Temp, 0}
 	}
+	mgr.kitchen.Send(toDiscard, core.Discarded)
 	idx = mgr.overflowShelf.add(order)
 	mgr.index[order.ID] = shelfLocation{overflow, order.Temp, idx}
-	mgr.ctx.Log.Infof("orderID: %s", mgr.overflowShelf[order.Temp][idx].ID)
 }
 
 func (mgr *shelfMgr) Pick(orderID string) error {
@@ -212,19 +198,19 @@ func (mgr *shelfMgr) Pick(orderID string) error {
 	}
 	mgr.ctx.Log.Infof("Pick order %s from %+v", orderID, loc)
 	if loc.cate == overflow {
-		mgr.ctx.Log.Infof("overflow shelf: %v", mgr.overflowShelf)
+		mgr.ctx.Log.Debugf("overflow shelf: %v", mgr.overflowShelf)
 		mgr.overflowShelf[loc.temp].remove(loc.idx)
 		if len(mgr.overflowShelf[loc.temp]) > loc.idx {
 			id := mgr.overflowShelf[loc.temp][loc.idx].ID
-			mgr.ctx.Log.Infof("overflow move order %s from %v to %v", id, mgr.index[id], loc)
+			mgr.ctx.Log.Debugf("relocat order %s from %v to %v", id, mgr.index[id], loc)
 			mgr.index[id] = loc
 		}
 	} else {
-		mgr.ctx.Log.Infof("singleshelf: %v", mgr.singleShelves)
+		mgr.ctx.Log.Debugf("singleshelf: %v", mgr.singleShelves)
 		mgr.singleShelves[loc.temp].remove(loc.idx)
 		if len(mgr.singleShelves[loc.temp]) > loc.idx {
 			id := mgr.singleShelves[loc.temp][loc.idx].ID
-			mgr.ctx.Log.Infof("singlTemp move order %s from %v to %v", id, mgr.index[id], loc)
+			mgr.ctx.Log.Debugf("relocate order %s from %v to %v", id, mgr.index[id], loc)
 			mgr.index[id] = loc
 		}
 	}

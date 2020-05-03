@@ -10,7 +10,7 @@ import (
 	"github.com/njuwelkin/lc/kitchen/pkg/courier"
 	"github.com/njuwelkin/lc/kitchen/pkg/kitchen"
 	"github.com/njuwelkin/lc/kitchen/pkg/parser"
-	"github.com/njuwelkin/lc/kitchen/pkg/shelf"
+	"github.com/njuwelkin/lc/kitchen/pkg/shelf2"
 )
 
 func usage() {
@@ -32,11 +32,12 @@ func main() {
 	if err != nil {
 		return
 	}
+	ctx.IsDebug = true
 
 	// build kitchen
 	cookMgr := cook.NewCookMgr(ctx)
 	courierMgr := courier.NewCourierMgr(ctx)
-	shelf := shelf.NewShelfMgr(ctx)
+	shelf := shelf2.NewShelfMgr(ctx)
 	kitchen := kitchen.NewKitchen(ctx, cookMgr, courierMgr, shelf).Run()
 
 	// parse orders

@@ -77,6 +77,9 @@ func (o *Order) UpdateRemainLife(now time.Time, onOverFlow bool) {
 	}
 	o.UpdateTime = now
 	o.RemainLife -= o.DecayRate * float64(age) * float64(shelfDecayModifier)
+	if o.RemainLife < 0 {
+		o.RemainLife = 0
+	}
 }
 
 func (o *Order) EstimatePickValue(onOverFlow bool) float64 {
@@ -86,6 +89,9 @@ func (o *Order) EstimatePickValue(onOverFlow bool) float64 {
 		shelfDecayModifier = 2
 	}
 	remainLife := o.RemainLife - o.DecayRate*float64(age)*float64(shelfDecayModifier)
+	if remainLife < 0 {
+		remainLife = 0
+	}
 	return remainLife / float64(o.ShelfLife)
 }
 
@@ -96,13 +102,13 @@ type Kitchen interface {
 
 type Shelf interface {
 	Put(*Order)
-	Pick(id string) error
+	Pick(*Order) error
 	SetKitchen(Kitchen)
 }
 
 // abstract interface of cook, courier
 type Colleague interface {
-	Notify(*Order)
+	Notify(*Order, Event)
 	SetKitchen(Kitchen)
 	GetOffWork()
 }

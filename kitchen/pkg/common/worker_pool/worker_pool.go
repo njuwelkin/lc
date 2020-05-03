@@ -87,6 +87,8 @@ func (workerPool *WorkerPool) Quit() {
 		}
 		// block until all works quit
 		workerPool.waitGroup.Wait()
+		close(workerPool.jobChannel)
+		close(workerPool.quitChannel)
 	}
 }
 

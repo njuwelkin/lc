@@ -49,10 +49,13 @@ type config struct {
 
 	// log configuration
 	LogConfig *logConfig `yaml:"log"`
+
+	// debug flag
+	IsDebug bool `yaml:"isDebug"`
 }
 
 const (
-	defaultIngestInterval  = 50
+	defaultIngestInterval  = 500 // in millisecond
 	defaultHotSelves       = 10
 	defaultColdShelves     = 10
 	defaultFrozenShelves   = 10
