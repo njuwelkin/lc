@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 )
 
@@ -34,8 +35,40 @@ func NewContext(configPath string) (*Context, error) {
 		}
 	}
 
-	return &Context{
+	ret := &Context{
 		config: config,
 		Log:    log,
-	}, nil
+	}
+	err = ret.UpdateLogFileSettings()
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (c *Context) UpdateLogFileSettings() error {
+	log := c.config.LogConfig
+	if level, err := logrus.ParseLevel(log.Level); err == nil {
+		c.Log.SetLevel(level)
+	} else {
+		c.Log.WithField("logLevel", log.Level).Warning("invalid log level")
+		return err
+	}
+
+	if log.File != "" {
+		c.Log.SetOutput(&lumberjack.Logger{
+			Filename:   log.File,
+			MaxSize:    log.MaxSize,
+			MaxBackups: log.MaxBackups,
+		})
+	} else {
+		// used colored log for console output
+		c.Log.SetFormatter(&logrus.TextFormatter{
+			ForceColors:     true,
+			TimestampFormat: "2006-01-02T15:04:05.999",
+			FullTimestamp:   true,
+		})
+		c.Log.Info("log file is set to empty.  do not write log file")
+	}
+	return nil
 }

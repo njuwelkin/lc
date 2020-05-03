@@ -56,13 +56,6 @@ type Order struct {
 	//   this will enable kitchen system to estimate the remain value when picking
 	// system will prefer to discard a order with least picking value when shelf is full
 	EstimatePickTime time.Time
-
-	// once courier
-	IsCanceled chan struct{}
-	// courier will block on this channel when order is not ready for picking(not cooked, etc)
-	// in this case the block will not happen as food can always been cooked immediately
-	//   while courier always need to sleep some seconds. but still have it here for functional integrity.
-	IsOnShelf chan struct{}
 }
 
 func (o *Order) Value() float64 {

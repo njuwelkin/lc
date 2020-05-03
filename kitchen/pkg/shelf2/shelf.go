@@ -190,7 +190,7 @@ func (mgr *shelfMgr) Put(order *core.Order) {
 			}
 			value := o.EstimatePickValue(true)
 			mgr.ctx.Log.Infof("estimate pick time: %v, %d", o.EstimatePickTime, o.EstimatePickTime.Unix())
-			mgr.ctx.Log.Infof("estimate pick value: %d", value)
+			mgr.ctx.Log.Infof("estimate pick value: %f", value)
 			if value <= minValue {
 				minValue = value
 				toDiscard = o

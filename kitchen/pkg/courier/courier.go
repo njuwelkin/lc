@@ -129,7 +129,7 @@ func (cj *courierJob) Do() {
 	}
 	// update order status and notify msg center
 	cj.order.Status = "delivered"
-	cj.mgr.ctx.Log.Debugf("Delivered order %+v", cj.order)
+	cj.mgr.ctx.Log.Infof("Delivered order %+v", cj.order)
 	cj.mgr.Kitchen.Send(cj.order, core.Delivered)
 }
 

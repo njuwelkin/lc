@@ -48,7 +48,7 @@ func (k *kitchen) PlaceOrder(req *core.OrderRequest) error {
 		k.ctx.Log.WithError(err).Warn("invalid order request")
 		return err
 	}
-	k.dispatch(order, core.Accept)
+	k.Send(order, core.Accept)
 	return nil
 }
 
@@ -109,6 +109,7 @@ func (k *kitchen) dispatch(order *core.Order, event core.Event) {
 		k.countDiscard++
 	case core.Delivered:
 		k.countDelieve++
+		k.ctx.Log.Infof("countDelivered %s: %d->%d", order.ID, k.countDelieve-1, k.countDelieve)
 	}
 }
 
@@ -129,8 +130,5 @@ func newOrder(req *core.OrderRequest) (*core.Order, error) {
 		Temp:      temp,
 		ShelfLife: float64(req.ShelfLife),
 		DecayRate: req.DecayRate,
-
-		IsOnShelf:  make(chan struct{}, 1),
-		IsCanceled: make(chan struct{}, 1),
 	}, nil
 }
