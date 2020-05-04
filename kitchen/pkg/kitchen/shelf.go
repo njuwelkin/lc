@@ -156,12 +156,14 @@ func (s *shelfSet) Put(order *core.Order) {
 	// try placing on a shelf that matches the order’s temperature.
 	if !s.singleShelves[temp].isFull() {
 		s.singleShelves[temp].add(order)
+		order.ShelfType = core.SingleTempShelf
 		return
 	}
 
 	// try placing on the overflow shelf
 	if !s.overflowShelf.isFull() {
 		s.overflowShelf.add(order)
+		order.ShelfType = core.OverflowShelf
 		return
 	}
 
@@ -175,6 +177,7 @@ func (s *shelfSet) Put(order *core.Order) {
 			s.overflowShelf.remove(toMove)
 			s.singleShelves[toMove.Temp].add(toMove)
 			s.overflowShelf.add(order)
+			order.ShelfType = core.OverflowShelf
 			return
 		}
 	}
@@ -209,6 +212,7 @@ func (s *shelfSet) Put(order *core.Order) {
 	s.overflowShelf.remove(toDiscard)
 	s.kitchen.Send(toDiscard, core.Discarded)
 	s.overflowShelf.add(order)
+	order.ShelfType = core.OverflowShelf
 }
 
 func (s *shelfSet) Pick(order *core.Order) error {

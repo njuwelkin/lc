@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/njuwelkin/lc/kitchen/pkg/cleaner"
 	"github.com/njuwelkin/lc/kitchen/pkg/cook"
 	"github.com/njuwelkin/lc/kitchen/pkg/core"
 	"github.com/njuwelkin/lc/kitchen/pkg/courier"
 	"github.com/njuwelkin/lc/kitchen/pkg/kitchen"
 	"github.com/njuwelkin/lc/kitchen/pkg/parser"
-	//"github.com/njuwelkin/lc/kitchen/pkg/shelf2"
 )
 
 func usage() {
@@ -37,8 +37,8 @@ func main() {
 	// build kitchen
 	cookMgr := cook.NewCookMgr(ctx)
 	courierMgr := courier.NewCourierMgr(ctx)
-	//shelf := shelf2.NewShelfMgr(ctx)
-	kitchen := kitchen.NewKitchen(ctx, cookMgr, courierMgr).Run()
+	cleaner := cleaner.NewCleaner(ctx)
+	kitchen := kitchen.NewKitchen(ctx, cookMgr, courierMgr, cleaner).Run()
 
 	// parse orders
 	orders := []core.OrderRequest{}

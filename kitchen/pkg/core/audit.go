@@ -20,7 +20,7 @@ func newAudit(out io.Writer) *audit {
 func (a *audit) PrintEvent(order *Order, event Event) {
 	a.printLine("\n\n==========================================================================")
 	switch event {
-	case Accept:
+	case Accepted:
 		a.printLine(fmt.Sprintf("Accept order '%s'", order.ID))
 	case Cooked:
 		a.printLine(fmt.Sprintf("Order '%s' is cooked", order.ID))

@@ -26,7 +26,7 @@ type Event int
 
 const (
 	// accept a new order
-	Accept Event = iota
+	Accepted Event = iota
 	// cook complete his job
 	Cooked
 	// food is relocated on shelf
@@ -39,6 +39,13 @@ const (
 	Delivered
 )
 
+type ShelfType int
+
+const (
+	SingleTempShelf = iota
+	OverflowShelf
+)
+
 type Order struct {
 	// static info parsed from order request
 	ID        string
@@ -48,14 +55,22 @@ type Order struct {
 	DecayRate float64
 
 	// dynamic info
-	RemainLife float64
-	UpdateTime time.Time
-	Status     string
+	RemainLife float64   // the remain shelf life, it reduce DecayRate*shelfDecayModifier every second
+	UpdateTime time.Time // last time the RemainLife is updated
+	Status     string    // human readable status for an order
+	ShelfType  ShelfType // on singletemp shelf or overflow shelf
 
-	// courier reports a estimate picking time after receive a picking request
-	//   this will enable kitchen system to estimate the remain value when picking
-	// system will prefer to discard a order with least picking value when shelf is full
+	// courier reports an estimate picking time after receive a picking request
+	//   this will help kitchen system to estimate the remain value when picking
+	// system will prefer to discard a order with minimal picking value when shelf is full
 	EstimatePickTime time.Time
+
+	// courier will block on this channel, if he has arrived at kitchen but food is not ready
+	//   in this case cook can always complete immediately, the block will not happen,
+	//   but still keep the function here
+	Ready chan struct{}
+	// courier will cancel the picking job once receiving a message from the cancel channel
+	Cancel chan struct{}
 }
 
 func (o *Order) Value() float64 {

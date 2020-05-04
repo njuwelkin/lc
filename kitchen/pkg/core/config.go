@@ -55,7 +55,7 @@ type config struct {
 }
 
 const (
-	defaultIngestInterval  = 50 // in millisecond
+	defaultIngestInterval  = 500 // in millisecond
 	defaultHotSelves       = 10
 	defaultColdShelves     = 10
 	defaultFrozenShelves   = 10

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type EntryID string
+type EntryID = string
 
 type Job interface {
 	Do()

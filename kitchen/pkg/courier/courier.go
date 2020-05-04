@@ -2,7 +2,6 @@ package courier
 
 import (
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -20,9 +19,6 @@ type courierMgr struct {
 	ctx      *core.Context
 	couriers *worker_pool.WorkerPool
 
-	order2courier map[string]*courierJob
-	o2cMutex      sync.Mutex
-
 	ongoingJob int64
 	pendingJob int64
 }
@@ -32,7 +28,6 @@ func NewCourierMgr(ctx *core.Context) *courierMgr {
 		BaseColleague: core.NewBaseColleague(),
 		ctx:           ctx,
 		couriers:      worker_pool.NewWorkerPool(ctx.NumOfCouriers, 4096).Run(),
-		order2courier: map[string]*courierJob{},
 		ongoingJob:    0,
 		pendingJob:    0,
 	}
@@ -41,25 +36,14 @@ func NewCourierMgr(ctx *core.Context) *courierMgr {
 func (c *courierMgr) Notify(order *core.Order, event core.Event) {
 	c.ctx.Log.Infof("courierMgr: receive Event %d for order %s", event, order.ID)
 	switch event {
-	case core.Accept:
+	case core.Accepted:
 		// accept a new order, dispatch a courier to pickup
-		job := c.addJob(order)
+		job := newCourierJob(c, order)
 		order.EstimatePickTime = c.latestPickTime()
 		atomic.AddInt64(&c.pendingJob, 1)
 		c.couriers.InsertJob(job)
-	case core.Discarded:
-		// a order has been discarded, tell courier to abort picking
-		c.o2cMutex.Lock()
-		job, found := c.order2courier[order.ID]
-		if !found {
-			c.o2cMutex.Unlock()
-			return
-		}
-		job.cancel <- struct{}{}
-		c.o2cMutex.Unlock()
 	default:
-		// this will not happen
-		c.ctx.Log.Errorf("invalid envent %d", event)
+		c.ctx.Log.Errorf("courierMgr received an invalid envent %d", event)
 		if c.ctx.IsDebug {
 			panic("invalid enven")
 		}
@@ -77,37 +61,15 @@ func (c *courierMgr) latestPickTime() time.Time {
 	return time.Now().Add(time.Second * time.Duration(inSecond))
 }
 
-func (c *courierMgr) addJob(order *core.Order) *courierJob {
-	c.o2cMutex.Lock()
-	defer c.o2cMutex.Unlock()
-
-	job := newCourierJob(c, order)
-	c.order2courier[order.ID] = job
-	return job
-}
-
-func (c *courierMgr) removeJob(id string) {
-	c.o2cMutex.Lock()
-	defer c.o2cMutex.Unlock()
-
-	job := c.order2courier[id]
-	close(job.cancel)
-	delete(c.order2courier, id)
-}
-
-//
 type courierJob struct {
 	mgr   *courierMgr
 	order *core.Order
-
-	cancel chan struct{}
 }
 
 func newCourierJob(mgr *courierMgr, order *core.Order) *courierJob {
 	return &courierJob{
-		mgr:    mgr,
-		order:  order,
-		cancel: make(chan struct{}, 1),
+		mgr:   mgr,
+		order: order,
 	}
 }
 
@@ -116,19 +78,28 @@ func (cj *courierJob) Do() {
 	atomic.AddInt64(&cj.mgr.pendingJob, -1)
 	atomic.AddInt64(&cj.mgr.ongoingJob, 1)
 	defer atomic.AddInt64(&cj.mgr.ongoingJob, -1)
-	defer cj.mgr.removeJob(cj.order.ID)
 
 	// go to kitchen
 	if !cj.gotoKitchen(cj.order) {
 		return
 	}
+
+	// wait until food is ready
+	<-cj.order.Ready
+
 	// pick the food
 	err := cj.mgr.Kitchen.GetShelf().Pick(cj.order)
 	if err != nil {
-		cj.mgr.ctx.Log.WithError(err).Warnf("order %s not found", cj.order.ID)
+		if !core.ResourceNotFound.Is(err) {
+			cj.mgr.ctx.Log.WithError(err).Warnf("unknown error")
+		}
 		return
 	}
+
 	// update order status and notify msg center
+	cj.order.Status = "picked"
+	cj.mgr.Kitchen.Send(cj.order, core.Picked)
+	// cj.deliever(order)
 	cj.order.Status = "delivered"
 	cj.mgr.ctx.Log.Infof("Delivered order %+v", cj.order)
 	cj.mgr.Kitchen.Send(cj.order, core.Delivered)
@@ -155,7 +126,7 @@ func (cj *courierJob) gotoKitchen(order *core.Order) bool {
 	case <-timer.C:
 		// arrive at the kitchen
 		return true
-	case <-cj.cancel:
+	case <-order.Cancel:
 		// order is discarded, terminate the task
 		cj.mgr.ctx.Log.Infof("order %s is discarded, abort picking job", cj.order.ID)
 		return false

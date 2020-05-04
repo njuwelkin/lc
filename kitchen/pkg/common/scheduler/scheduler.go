@@ -1,33 +1,31 @@
 package scheduler
 
 import (
-	"fmt"
+	//"fmt"
 	"sync"
 	"time"
 )
 
 type Scheduler struct {
 	entries *entries
-	stop    chan struct{}
+	stop    chan bool
 	add     chan *schEntry
 	remove  chan EntryID
 	running bool
 
 	timer *time.Timer
-	mutex sync.Mutex
+
+	mutex     sync.Mutex
+	waitGroup sync.WaitGroup
 }
 
 func NewScheduler() *Scheduler {
 	return &Scheduler{
 		entries: newEntries(),
-		stop:    make(chan struct{}),
-		add:     make(chan *schEntry),
-		remove:  make(chan EntryID),
 	}
 }
 
 func (s *Scheduler) addEntry(entry *schEntry) {
-	fmt.Printf("%+v\n", entry.Next)
 	s.entries.Insert(entry)
 }
 
@@ -58,6 +56,9 @@ func (s *Scheduler) runJobs(now time.Time) {
 }
 
 func (s *Scheduler) run() {
+	s.waitGroup.Add(1)
+	defer s.waitGroup.Done()
+
 	now := time.Now()
 	s.timer = time.NewTimer(10000 * time.Hour)
 	for {
@@ -65,35 +66,53 @@ func (s *Scheduler) run() {
 		select {
 		case now = <-s.timer.C:
 			s.runJobs(now)
+			if !s.running && s.entries.que.Len() == 0 {
+				s.timer.Stop()
+				return
+			}
 		case entry := <-s.add:
 			s.addEntry(entry)
 			now = time.Now()
 		case id := <-s.remove:
 			s.removeEntry(id)
 			now = time.Now()
-		case <-s.stop:
-			s.timer.Stop()
-			break
+		case force := <-s.stop:
+			if force || s.entries.que.Len() == 0 {
+				s.timer.Stop()
+				return
+			}
 		}
 	}
 }
 
-func (s *Scheduler) Stop() {
+func (s *Scheduler) Stop(force bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.running {
-		s.stop <- struct{}{}
 		s.running = false
+		// send stop command
+		s.stop <- force
+		// block until working thread quit
+		s.waitGroup.Wait()
+		// close all channels
+		close(s.stop)
+		close(s.add)
+		close(s.remove)
 	}
 }
 
-func (s *Scheduler) Run() {
+func (s *Scheduler) Run() *Scheduler {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if !s.running {
+		s.stop = make(chan bool)
+		s.add = make(chan *schEntry)
+		s.remove = make(chan EntryID)
+
 		go s.run()
 		s.running = true
 	}
+	return s
 }
 
 func (s *Scheduler) AddEntry(entry *schEntry) {
@@ -101,8 +120,6 @@ func (s *Scheduler) AddEntry(entry *schEntry) {
 	defer s.mutex.Unlock()
 	if s.running {
 		s.add <- entry
-	} else {
-		s.addEntry(entry)
 	}
 }
 
@@ -115,7 +132,17 @@ func (s *Scheduler) RemoveEntry(id EntryID) {
 	defer s.mutex.Unlock()
 	if s.running {
 		s.remove <- id
-	} else {
-		s.removeEntry(id)
 	}
+}
+
+type simpleJob struct {
+	f func()
+}
+
+func (sj *simpleJob) Do() {
+	sj.f()
+}
+
+func (s *Scheduler) AddFuncJob(id EntryID, f func(), next time.Time) {
+	s.AddJob(id, &simpleJob{f: f}, next)
 }
