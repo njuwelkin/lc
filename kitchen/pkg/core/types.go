@@ -96,7 +96,6 @@ type Kitchen interface {
 type Shelf interface {
 	Put(*Order)
 	Pick(*Order) error
-	SetKitchen(Kitchen)
 }
 
 // abstract interface of cook, courier

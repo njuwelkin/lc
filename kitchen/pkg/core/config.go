@@ -55,14 +55,14 @@ type config struct {
 }
 
 const (
-	defaultIngestInterval  = 500 // in millisecond
+	defaultIngestInterval  = 50 // in millisecond
 	defaultHotSelves       = 10
 	defaultColdShelves     = 10
 	defaultFrozenShelves   = 10
 	defaultOverflowShelves = 15
 	defaultNumOfCouriers   = 10
 
-	defaultLogFile       = "./order.log"
+	defaultLogFile       = "./kitchen.log"
 	defaultLogLevel      = "info"
 	defaultLogMaxSize    = 10 // MB
 	defaultLogMaxBackups = 10

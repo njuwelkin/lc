@@ -39,6 +39,7 @@ func NewCourierMgr(ctx *core.Context) *courierMgr {
 }
 
 func (c *courierMgr) Notify(order *core.Order, event core.Event) {
+	c.ctx.Log.Infof("courierMgr: receive Event %d for order %s", event, order.ID)
 	switch event {
 	case core.Accept:
 		// accept a new order, dispatch a courier to pickup
@@ -139,7 +140,8 @@ func (cj *courierJob) gotoKitchen(order *core.Order) bool {
 	order.EstimatePickTime = time.Now().Add(timeOnTheWay)
 
 	// impossible to arrive at kitchen in time, abort this order
-	if order.EstimatePickValue(false) <= 0 {
+	if value := order.EstimatePickValue(false); value <= 0 {
+		cj.mgr.ctx.Log.Infof("estimateValue: %d", value)
 		cj.mgr.ctx.Log.Warnf("impossible to pick order %s in time, abort", cj.order.ID)
 		cj.order.EstimatePickTime = time.Now().Add(time.Hour * 10000)
 		return false

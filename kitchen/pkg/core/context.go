@@ -12,6 +12,9 @@ type Context struct {
 	// config contains the global configurations
 	*config
 
+	// out put messages to system administrator
+	*audit
+
 	// Log is a reference to the logger
 	Log *logrus.Logger
 }
@@ -37,6 +40,7 @@ func NewContext(configPath string) (*Context, error) {
 
 	ret := &Context{
 		config: config,
+		audit:  newAudit(nil),
 		Log:    log,
 	}
 	err = ret.UpdateLogFileSettings()

@@ -20,24 +20,25 @@ type kitchen struct {
 	cookMgr    core.Colleague
 	courierMgr core.Colleague
 
-	shelf core.Shelf
+	shelf *shelfSet
 
 	countDelieve int
 	countDiscard int
 }
 
-func NewKitchen(ctx *core.Context, cookMgr, courierMgr core.Colleague, shelf core.Shelf) *kitchen {
+func NewKitchen(ctx *core.Context, cookMgr, courierMgr core.Colleague) *kitchen {
 	k := &kitchen{
 		ctx:        ctx,
 		msgQue:     make(chan *message, 4096),
 		stop:       make(chan struct{}),
 		cookMgr:    cookMgr,
 		courierMgr: courierMgr,
-		shelf:      shelf,
+		shelf:      newShelfSet(ctx),
 	}
 	cookMgr.SetKitchen(k)
 	courierMgr.SetKitchen(k)
-	shelf.SetKitchen(k)
+	k.shelf.setKitchen(k)
+
 	return k
 }
 
@@ -80,11 +81,13 @@ func (k *kitchen) Run() *kitchen {
 func (k *kitchen) Stop() {
 	// cooks complete existing job
 	k.cookMgr.GetOffWork()
+	// couriers deliver all existing orders
 	k.courierMgr.GetOffWork()
 	// leave one second for the out put
 	time.Sleep(time.Second)
 	k.stop <- struct{}{}
 	k.ctx.Log.Infof("kitchen stopped, %d orders delivered, %d discarded", k.countDelieve, k.countDiscard)
+	k.ctx.PrintStatistic(k.countDelieve, k.countDiscard)
 }
 
 func (k *kitchen) GetShelf() core.Shelf {
@@ -111,6 +114,8 @@ func (k *kitchen) dispatch(order *core.Order, event core.Event) {
 		k.countDelieve++
 		k.ctx.Log.Infof("countDelivered %s: %d->%d", order.ID, k.countDelieve-1, k.countDelieve)
 	}
+	k.ctx.PrintEvent(order, event)
+	//k.ctx.PrintShelfContent(k.shelf.content())
 }
 
 var tempNames = map[string]core.OrderTemp{
@@ -125,10 +130,12 @@ func newOrder(req *core.OrderRequest) (*core.Order, error) {
 		return nil, core.InvalidOrderRequest.WithField("Temp", req.Temp)
 	}
 	return &core.Order{
-		ID:        req.ID,
-		Name:      req.Name,
-		Temp:      temp,
-		ShelfLife: float64(req.ShelfLife),
-		DecayRate: req.DecayRate,
+		ID:         req.ID,
+		Name:       req.Name,
+		Temp:       temp,
+		ShelfLife:  float64(req.ShelfLife),
+		RemainLife: float64(req.ShelfLife),
+		DecayRate:  req.DecayRate,
+		UpdateTime: time.Now(),
 	}, nil
 }

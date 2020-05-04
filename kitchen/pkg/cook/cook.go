@@ -18,9 +18,12 @@ func NewCookMgr(ctx *core.Context) *cookMgr {
 }
 
 func (c *cookMgr) Notify(order *core.Order, event core.Event) {
-	c.cook(order)
-	c.Kitchen.GetShelf().Put(order)
-	c.Kitchen.Send(order, core.Cooked)
+	c.ctx.Log.Infof("cookMgr: receive Event %d for order %s", event, order.ID)
+	go func() {
+		c.cook(order)
+		c.Kitchen.GetShelf().Put(order)
+		c.Kitchen.Send(order, core.Cooked)
+	}()
 }
 
 func (c *cookMgr) GetOffWork() {
@@ -28,6 +31,6 @@ func (c *cookMgr) GetOffWork() {
 
 func (c *cookMgr) cook(order *core.Order) {
 	c.ctx.Log.Info("cook")
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 50)
 	order.Status = "cooked"
 }
