@@ -41,3 +41,13 @@ func NewTest(t *testing.T) *Test {
 	}
 	return bt
 }
+
+func NewTestWithoutContext(t *testing.T) *Test {
+	g := gomega.NewGomegaWithT(t)
+	gomega.RegisterTestingT(t)
+	bt := &Test{
+		GomegaWithT: g,
+		tt:          t,
+	}
+	return bt
+}

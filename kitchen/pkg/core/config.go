@@ -39,7 +39,7 @@ type logConfig struct {
 
 type config struct {
 	// interval of ingestion in millisecond
-	IngestInterval int `yaml:"ingestRate"`
+	IngestInterval int `yaml:"ingestInterval"`
 
 	// capacity of shelves
 	ShelfCap shelfCapacity `yaml:"shelfCapacity"`
@@ -100,7 +100,27 @@ func newConfig(path string) (*config, error) {
 		MaxPickDuration: defaultMaxPickDuration,
 		LogConfig:       logConfig,
 	}
-	return &conf, nil
+	err := conf.load(path)
+	if err != nil && !ResourceNotFound.Is(err) {
+		return nil, err
+	}
+	return &conf, conf.check()
+}
+
+func (c *config) check() error {
+	if c.IngestInterval < 1 {
+		return fmt.Errorf("IngestInterval cannot be less than 1")
+	}
+	if c.MinPickDuration < 1 {
+		return fmt.Errorf("MinPickDuration cannot be less than 1")
+	}
+	if c.MaxPickDuration <= c.MinPickDuration {
+		return fmt.Errorf("MaxPickDuration should be larger thna MinPickDuration")
+	}
+	if c.NumOfCouriers < 1 {
+		return fmt.Errorf("NumOfCouriers cannot be less than 1")
+	}
+	return nil
 }
 
 func (c *config) load(path string) error {

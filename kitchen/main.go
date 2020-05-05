@@ -1,8 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/njuwelkin/lc/kitchen/pkg/cleaner"
@@ -10,7 +14,6 @@ import (
 	"github.com/njuwelkin/lc/kitchen/pkg/core"
 	"github.com/njuwelkin/lc/kitchen/pkg/courier"
 	"github.com/njuwelkin/lc/kitchen/pkg/kitchen"
-	"github.com/njuwelkin/lc/kitchen/pkg/parser"
 )
 
 func usage() {
@@ -18,6 +21,7 @@ func usage() {
 }
 
 func main() {
+	// get args
 	configPath := flag.String("conf", "./conf.yaml", "path to the config file")
 	flag.Parse()
 	args := flag.Args()
@@ -27,12 +31,11 @@ func main() {
 	}
 	orderPath := args[0]
 
-	// get context
+	// get config and global context
 	ctx, err := core.NewContext(*configPath)
 	if err != nil {
 		return
 	}
-	ctx.IsDebug = true
 
 	// build kitchen
 	cookMgr := cook.NewCookMgr(ctx)
@@ -40,19 +43,41 @@ func main() {
 	cleaner := cleaner.NewCleaner(ctx)
 	kitchen := kitchen.NewKitchen(ctx, cookMgr, courierMgr, cleaner).Run()
 
-	// parse orders
+	// inject orders
 	orders := []core.OrderRequest{}
-	err = parser.Parse(orderPath, &orders)
+	err = parse(orderPath, &orders)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(len(orders))
 	for _, order := range orders {
 		kitchen.PlaceOrder(&order)
 		time.Sleep(time.Duration(ctx.IngestInterval) * time.Millisecond)
 	}
 
+	// stop
 	kitchen.Stop()
-	fmt.Println("stopped")
+}
+
+func load(path string) ([]byte, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, err
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+	content, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
+}
+
+func parse(path string, val interface{}) error {
+	content, err := load(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(content, val)
 }
