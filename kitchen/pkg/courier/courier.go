@@ -52,6 +52,7 @@ func (c *courierMgr) Notify(order *core.Order, event core.Event) {
 
 func (c *courierMgr) GetOffWork() {
 	c.couriers.Quit()
+	time.Sleep(time.Millisecond * 100)
 }
 
 func (c *courierMgr) latestPickTime() time.Time {

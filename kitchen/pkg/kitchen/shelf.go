@@ -173,9 +173,10 @@ func (s *shelfSet) Put(order *core.Order) {
 			!s.singleShelves[t].isFull() {
 
 			toMove := s.overflowShelf[t].pickFirst()
-			toMove.UpdateRemainLife(now, true)
+			updateRemainLife(toMove, now, true)
 			s.overflowShelf.remove(toMove)
 			s.singleShelves[toMove.Temp].add(toMove)
+			s.kitchen.Send(toMove, core.Moved)
 			s.overflowShelf.add(order)
 			order.ShelfType = core.OverflowShelf
 			return
@@ -188,7 +189,7 @@ func (s *shelfSet) Put(order *core.Order) {
 	for t := core.Hot; t < core.InvalidTemp; t++ {
 		shelf := s.overflowShelf[t]
 		for _, o := range shelf.content {
-			o.UpdateRemainLife(now, true)
+			updateRemainLife(o, now, true)
 			if o.EstimatePickTime.Before(now) {
 				o.EstimatePickTime = now.Add(time.Second)
 			}
@@ -251,4 +252,17 @@ func (s *shelfSet) content() [core.CountTempType + 1][]*core.Order {
 		}
 	}
 	return ret
+}
+
+func updateRemainLife(o *core.Order, now time.Time, onOverFlow bool) {
+	age := now.Unix() - o.UpdateTime.Unix()
+	shelfDecayModifier := 1
+	if onOverFlow {
+		shelfDecayModifier = 2
+	}
+	o.UpdateTime = now
+	o.RemainLife -= o.DecayRate * float64(age) * float64(shelfDecayModifier)
+	if o.RemainLife < 0 {
+		o.RemainLife = 0
+	}
 }

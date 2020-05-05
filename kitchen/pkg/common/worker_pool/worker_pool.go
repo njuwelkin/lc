@@ -1,7 +1,7 @@
 package worker_pool
 
 import (
-	"fmt"
+	//"fmt"
 	"sync"
 )
 
@@ -25,11 +25,9 @@ type WorkerPool struct {
 
 func NewWorkerPool(workers int, chanSize int) *WorkerPool {
 	return &WorkerPool{
-		jobChannel:  make(chan Job, chanSize),
-		quitChannel: make(chan bool),
-		workers:     workers,
-		chanSize:    chanSize,
-		running:     false,
+		workers:  workers,
+		chanSize: chanSize,
+		running:  false,
 	}
 }
 
@@ -47,7 +45,7 @@ func (workerPool *WorkerPool) execute() {
 			case job := <-workerPool.jobChannel:
 				job.Do()
 			case <-workerPool.quitChannel:
-				fmt.Println("quit")
+				//fmt.Println("quit")
 				return
 			}
 		}
@@ -59,6 +57,8 @@ func (workerPool *WorkerPool) Run() *WorkerPool {
 	defer workerPool.runningMutex.Unlock()
 
 	if !workerPool.running {
+		workerPool.jobChannel = make(chan Job, workerPool.chanSize)
+		workerPool.quitChannel = make(chan bool)
 		for i := 0; i < workerPool.workers; i++ {
 			go workerPool.execute()
 		}

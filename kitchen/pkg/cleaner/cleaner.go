@@ -21,6 +21,7 @@ func NewCleaner(ctx *core.Context) *cleaner {
 }
 
 func (c *cleaner) Notify(order *core.Order, event core.Event) {
+	c.ctx.Log.Infof("cleaner: receive event %d for order %s", event, order.ID)
 	switch event {
 	case core.Cooked:
 		c.scheduleCleanJob(order)
@@ -67,4 +68,5 @@ func (c *cleaner) calculateExpireTime(order *core.Order) time.Time {
 func (c *cleaner) GetOffWork() {
 	// block until all scheduled clean job done
 	c.scheduler.Stop(false)
+	time.Sleep(time.Millisecond * 100)
 }

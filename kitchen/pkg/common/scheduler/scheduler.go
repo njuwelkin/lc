@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	//"fmt"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -89,6 +89,9 @@ func (s *Scheduler) Stop(force bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.running {
+		for _, e := range s.entries.que.buf {
+			fmt.Println(e)
+		}
 		s.running = false
 		// send stop command
 		s.stop <- force

@@ -89,8 +89,6 @@ func (k *kitchen) Stop() {
 	k.courierMgr.GetOffWork()
 	// clean all discarded food on shelf
 	k.cleaner.GetOffWork()
-	// leave one second for the out put
-	time.Sleep(time.Second)
 	// stop the message loop
 	k.stop <- struct{}{}
 	k.ctx.PrintStatistic(k.countDelieve, k.countDiscard)
@@ -117,7 +115,7 @@ func (k *kitchen) dispatch(order *core.Order, event core.Event) {
 		k.cleaner.Notify(order, event)
 	case core.Picked:
 		// do nothing.
-		// this event is not really need as once it's picked,
+		// this event is not really need, as once it's picked,
 		//   it will be delivered at once.
 	case core.Discarded:
 		// tell courier to cancel the picking job

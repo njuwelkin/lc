@@ -27,6 +27,7 @@ func (c *cookMgr) Notify(order *core.Order, event core.Event) {
 }
 
 func (c *cookMgr) GetOffWork() {
+	time.Sleep(time.Millisecond * 100)
 }
 
 func (c *cookMgr) cook(order *core.Order) {

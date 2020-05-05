@@ -15,7 +15,7 @@ type Context struct {
 	// out put messages to system administrator
 	*audit
 
-	// Log is a reference to the logger
+	// logger of kitchen system
 	Log *logrus.Logger
 }
 
