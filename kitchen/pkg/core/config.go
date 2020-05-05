@@ -105,15 +105,15 @@ func (c *config) load(path string) error {
 	}
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return fmt.Errorf("failed to find the config file: %w ", err)
+		return fmt.Errorf("failed to find the config file: %v ", err)
 	}
 	yamlFile, err := ioutil.ReadFile(absPath)
 	if err != nil {
-		return fmt.Errorf("read config file failed: %w", err)
+		return fmt.Errorf("read config file failed: %v", err)
 	}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
-		return fmt.Errorf("unmarshal conf failed: %w", err)
+		return fmt.Errorf("unmarshal conf failed: %v", err)
 	}
 	return nil
 }

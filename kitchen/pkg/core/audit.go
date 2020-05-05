@@ -23,13 +23,15 @@ func (a *audit) PrintEvent(order *Order, event Event) {
 	case Accepted:
 		a.printLine(fmt.Sprintf("Accept order '%s'", order.ID))
 	case Cooked:
-		a.printLine(fmt.Sprintf("Order '%s' is cooked", order.ID))
+		a.printLine(fmt.Sprintf("Order '%s' cooked", order.ID))
+	case Moved:
+		a.printLine(fmt.Sprintf("Order '%s' moved to single temp shelf", order.ID))
 	case Picked:
-		a.printLine(fmt.Sprintf("Order '%s' is picked", order.ID))
+		a.printLine(fmt.Sprintf("Order '%s' picked", order.ID))
 	case Discarded:
-		a.printLine(fmt.Sprintf("Order '%s' is discarded", order.ID))
+		a.printLine(fmt.Sprintf("Order '%s' discarded", order.ID))
 	case Delivered:
-		a.printLine(fmt.Sprintf("Order '%s' is delivered", order.ID))
+		a.printLine(fmt.Sprintf("Order '%s' delivered", order.ID))
 	}
 }
 

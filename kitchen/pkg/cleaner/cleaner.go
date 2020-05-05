@@ -28,6 +28,8 @@ func (c *cleaner) Notify(order *core.Order, event core.Event) {
 	case core.Moved:
 		c.scheduler.RemoveEntry(order.ID)
 		c.scheduleCleanJob(order)
+	case core.Discarded:
+		c.scheduler.RemoveEntry(order.ID)
 	case core.Delivered:
 		c.scheduler.RemoveEntry(order.ID)
 	default:
@@ -62,7 +64,7 @@ func (c *cleaner) calculateExpireTime(order *core.Order) time.Time {
 		shelfDecayModifier = 2.0
 	}
 	age := order.RemainLife / (order.DecayRate * shelfDecayModifier)
-	return time.Now().Add(time.Second * time.Duration(age))
+	return time.Now().Add(time.Millisecond * time.Duration(age*1000))
 }
 
 func (c *cleaner) GetOffWork() {

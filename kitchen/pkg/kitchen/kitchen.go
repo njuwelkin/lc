@@ -47,7 +47,7 @@ func NewKitchen(ctx *core.Context, cookMgr, courierMgr, cleaner core.Colleague) 
 
 func (k *kitchen) PlaceOrder(req *core.OrderRequest) error {
 	k.ctx.Log.Infof("receive order %+v", req)
-	order, err := newOrder(req)
+	order, err := NewOrder(req)
 	if err != nil {
 		k.ctx.Log.WithError(err).Warn("invalid order request")
 		return err
@@ -118,6 +118,8 @@ func (k *kitchen) dispatch(order *core.Order, event core.Event) {
 		// this event is not really need, as once it's picked,
 		//   it will be delivered at once.
 	case core.Discarded:
+		// notify cleaner to remove the clean job
+		k.cleaner.Notify(order, event)
 		// tell courier to cancel the picking job
 		order.Cancel <- struct{}{}
 		// update statistic and close the order
@@ -146,7 +148,7 @@ var tempNames = map[string]core.OrderTemp{
 	"frozen": core.Frozen,
 }
 
-func newOrder(req *core.OrderRequest) (*core.Order, error) {
+func NewOrder(req *core.OrderRequest) (*core.Order, error) {
 	temp, found := tempNames[req.Temp]
 	if !found {
 		return nil, core.InvalidOrderRequest.WithField("Temp", req.Temp)

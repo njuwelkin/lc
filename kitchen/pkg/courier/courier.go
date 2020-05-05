@@ -113,7 +113,7 @@ func (cj *courierJob) gotoKitchen(order *core.Order) bool {
 
 	// impossible to arrive at kitchen in time, abort this order
 	if value := order.EstimatePickValue(false); value <= 0 {
-		cj.mgr.ctx.Log.Infof("estimateValue: %d", value)
+		cj.mgr.ctx.Log.Infof("estimateValue: %f", value)
 		cj.mgr.ctx.Log.Warnf("impossible to pick order %s in time, abort", cj.order.ID)
 		cj.order.EstimatePickTime = time.Now().Add(time.Hour * 10000)
 		return false

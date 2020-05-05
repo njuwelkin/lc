@@ -37,12 +37,14 @@ const (
 	Discarded
 	// order is delivered
 	Delivered
+	// total number of event types
+	CountEvent
 )
 
 type ShelfType int
 
 const (
-	SingleTempShelf = iota
+	SingleTempShelf ShelfType = iota
 	OverflowShelf
 )
 

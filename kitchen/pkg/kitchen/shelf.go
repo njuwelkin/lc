@@ -176,6 +176,7 @@ func (s *shelfSet) Put(order *core.Order) {
 			updateRemainLife(toMove, now, true)
 			s.overflowShelf.remove(toMove)
 			s.singleShelves[toMove.Temp].add(toMove)
+			toMove.ShelfType = core.SingleTempShelf
 			s.kitchen.Send(toMove, core.Moved)
 			s.overflowShelf.add(order)
 			order.ShelfType = core.OverflowShelf
