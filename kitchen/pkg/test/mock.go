@@ -24,21 +24,21 @@ func (s *shelf) Pick(o *core.Order) error {
 
 // mock kitchen
 type mockKitchen struct {
+	ctx   *core.Context
 	s     *shelf
 	Count int
 }
 
-func NewKitchen() *mockKitchen {
+func NewKitchen(ctx *core.Context) *mockKitchen {
 	return &mockKitchen{
-		s: &shelf{map[string]*core.Order{}},
+		ctx: ctx,
+		s:   &shelf{map[string]*core.Order{}},
 	}
 }
 
 func (k *mockKitchen) Send(o *core.Order, e core.Event) {
-	if e != core.Discarded {
-		panic("invalid event")
-	}
 	k.Count++
+	k.ctx.Log.Infof("receive event %d for order %s", e, o.ID)
 }
 
 func (k *mockKitchen) GetShelf() core.Shelf {
@@ -46,6 +46,7 @@ func (k *mockKitchen) GetShelf() core.Shelf {
 }
 
 func (k *mockKitchen) Find(o *core.Order) bool {
+	k.ctx.Log.Infof("%v", k.s.content)
 	_, found := k.s.content[o.ID]
 	return found
 }

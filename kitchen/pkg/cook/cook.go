@@ -19,6 +19,12 @@ func NewCookMgr(ctx *core.Context) *cookMgr {
 
 func (c *cookMgr) Notify(order *core.Order, event core.Event) {
 	c.ctx.Log.Infof("cookMgr: receive Event %d for order %s", event, order.ID)
+	if event != core.Accepted {
+		c.ctx.Log.Errorf("cook received an invalid event %d", event)
+		if c.ctx.IsDebug {
+			panic("invalid event")
+		}
+	}
 	go func() {
 		c.cook(order)
 		c.Kitchen.GetShelf().Put(order)

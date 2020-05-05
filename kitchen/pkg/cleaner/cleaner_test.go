@@ -20,7 +20,7 @@ func TestCleaner(tt *testing.T) {
 	o1, _ := kitchen.NewOrder(req1)
 	//o2, _ := kitchen.NewOrder(req2)
 
-	k := test.NewKitchen()
+	k := test.NewKitchen(t.Context)
 	c := cleaner.NewCleaner(t.Context)
 	c.SetKitchen(k)
 

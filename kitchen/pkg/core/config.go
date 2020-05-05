@@ -47,6 +47,10 @@ type config struct {
 	// total number of couries
 	NumOfCouriers int `yaml:"numOfCouriers"`
 
+	// time for courier to pick a order
+	MinPickDuration int `yaml:"minPickDuration"`
+	MaxPickDuration int `yaml:"maxPickDuration"`
+
 	// log configuration
 	LogConfig *logConfig `yaml:"log"`
 
@@ -61,6 +65,8 @@ const (
 	defaultFrozenShelves   = 10
 	defaultOverflowShelves = 15
 	defaultNumOfCouriers   = 10
+	defaultMinPickDuration = 2
+	defaultMaxPickDuration = 6
 
 	defaultLogFile       = "./kitchen.log"
 	defaultLogLevel      = "info"
@@ -87,10 +93,12 @@ func newConfig(path string) (*config, error) {
 		Overflow: defaultOverflowShelves,
 	}
 	conf := config{
-		IngestInterval: defaultIngestInterval,
-		ShelfCap:       shelfCapacity,
-		NumOfCouriers:  defaultNumOfCouriers,
-		LogConfig:      logConfig,
+		IngestInterval:  defaultIngestInterval,
+		ShelfCap:        shelfCapacity,
+		NumOfCouriers:   defaultNumOfCouriers,
+		MinPickDuration: defaultMinPickDuration,
+		MaxPickDuration: defaultMaxPickDuration,
+		LogConfig:       logConfig,
 	}
 	return &conf, nil
 }

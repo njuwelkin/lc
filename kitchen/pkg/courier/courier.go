@@ -9,11 +9,6 @@ import (
 	"github.com/njuwelkin/lc/kitchen/pkg/core"
 )
 
-const (
-	minPickDuration = 2
-	maxPickDuration = 6
-)
-
 type courierMgr struct {
 	*core.BaseColleague
 	ctx      *core.Context
@@ -56,9 +51,9 @@ func (c *courierMgr) GetOffWork() {
 }
 
 func (c *courierMgr) latestPickTime() time.Time {
-	inSecond := int64(maxPickDuration) + // complete ongoing job
-		(c.pendingJob/int64(c.ctx.NumOfCouriers))*maxPickDuration + // complete pending job
-		int64(maxPickDuration) // time to arrive at kitchen
+	inSecond := int64(c.ctx.MaxPickDuration) + // complete ongoing job
+		(c.pendingJob/int64(c.ctx.NumOfCouriers))*int64(c.ctx.MaxPickDuration) + // complete pending job
+		int64(c.ctx.MaxPickDuration) // time to arrive at kitchen
 	return time.Now().Add(time.Second * time.Duration(inSecond))
 }
 
@@ -94,6 +89,7 @@ func (cj *courierJob) Do() {
 		if !core.ResourceNotFound.Is(err) {
 			cj.mgr.ctx.Log.WithError(err).Warnf("unknown error")
 		}
+		cj.mgr.ctx.Log.Infof("order %s not exist", cj.order.ID)
 		return
 	}
 
@@ -107,6 +103,8 @@ func (cj *courierJob) Do() {
 }
 
 func (cj *courierJob) gotoKitchen(order *core.Order) bool {
+	minPickDuration := cj.mgr.ctx.MinPickDuration
+	maxPickDuration := cj.mgr.ctx.MaxPickDuration
 	timeOnTheWay := time.Second * time.Duration(minPickDuration+rand.Intn(maxPickDuration-minPickDuration+1))
 	// give a accurate estimation of pick time
 	order.EstimatePickTime = time.Now().Add(timeOnTheWay)
