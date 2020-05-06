@@ -1,7 +1,7 @@
 package kitchen
 
 import (
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"kitchen/pkg/core"
 	"time"
 )
 
@@ -139,7 +139,7 @@ func (k *kitchen) dispatch(order *core.Order, event core.Event) {
 		}
 	}
 	k.ctx.PrintEvent(order, event)
-	//k.ctx.PrintShelfContent(k.shelf.content())
+	k.ctx.PrintShelfContent(k.shelf.content())
 }
 
 var tempNames = map[string]core.OrderTemp{

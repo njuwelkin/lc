@@ -64,7 +64,7 @@ const (
 	defaultColdShelves     = 10
 	defaultFrozenShelves   = 10
 	defaultOverflowShelves = 15
-	defaultNumOfCouriers   = 10
+	defaultNumOfCouriers   = 20
 	defaultMinPickDuration = 2
 	defaultMaxPickDuration = 6
 

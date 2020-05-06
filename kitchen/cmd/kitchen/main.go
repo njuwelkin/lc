@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/njuwelkin/lc/kitchen/pkg/cleaner"
-	"github.com/njuwelkin/lc/kitchen/pkg/cook"
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
-	"github.com/njuwelkin/lc/kitchen/pkg/courier"
-	"github.com/njuwelkin/lc/kitchen/pkg/kitchen"
+	"kitchen/pkg/cleaner"
+	"kitchen/pkg/cook"
+	"kitchen/pkg/core"
+	"kitchen/pkg/courier"
+	"kitchen/pkg/kitchen"
 )
 
 func usage() {
-	fmt.Println("kitchen inputfile [-conf confpath]")
+	fmt.Println("kitchen [-conf conf.yaml] orders.json")
 }
 
 func main() {

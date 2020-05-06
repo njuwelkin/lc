@@ -1,8 +1,8 @@
 package cleaner
 
 import (
-	"github.com/njuwelkin/lc/kitchen/pkg/common/scheduler"
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"kitchen/pkg/common/scheduler"
+	"kitchen/pkg/core"
 	"time"
 )
 

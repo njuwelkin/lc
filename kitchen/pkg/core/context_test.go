@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/njuwelkin/lc/kitchen/pkg/core"
-	"github.com/njuwelkin/lc/kitchen/pkg/test"
+	. "kitchen/pkg/core"
+	"kitchen/pkg/test"
 )
 
 var conf1 string = `
@@ -64,7 +64,7 @@ func TestContext(tt *testing.T) {
 	t.Run("default config", func() {
 		ctx, err := NewContext("")
 		t.Expect(err).To(BeNil())
-		t.Expect(ctx.NumOfCouriers).To(Equal(10))
+		t.Expect(ctx.NumOfCouriers).To(Equal(20))
 	})
 	t.Run("load config", func() {
 		err := setup(conf1)

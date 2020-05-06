@@ -75,11 +75,9 @@ type Order struct {
 	Cancel chan struct{}
 }
 
-/*
 func (o *Order) Value() float64 {
 	return o.RemainLife / float64(o.ShelfLife)
 }
-*/
 
 func (o *Order) EstimatePickValue(onOverFlow bool) float64 {
 	age := o.EstimatePickTime.Unix() - o.UpdateTime.Unix()
@@ -104,7 +102,7 @@ type Shelf interface {
 	Pick(*Order) error
 }
 
-// abstract interface of cook, courier
+// abstract interface of cook, courier and cleaner
 type Colleague interface {
 	Notify(*Order, Event)
 	SetKitchen(Kitchen)

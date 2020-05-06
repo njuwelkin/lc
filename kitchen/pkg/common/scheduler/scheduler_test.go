@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/njuwelkin/lc/kitchen/pkg/common/scheduler"
-	"github.com/njuwelkin/lc/kitchen/pkg/test"
+	. "kitchen/pkg/common/scheduler"
+	"kitchen/pkg/test"
 )
 
 var count int = 0

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/njuwelkin/lc/kitchen/pkg/common/worker_pool"
-	"github.com/njuwelkin/lc/kitchen/pkg/test"
+	. "kitchen/pkg/common/worker_pool"
+	"kitchen/pkg/test"
 )
 
 var count int64 = 0

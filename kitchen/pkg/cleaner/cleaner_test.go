@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/njuwelkin/lc/kitchen/pkg/cleaner"
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
-	"github.com/njuwelkin/lc/kitchen/pkg/kitchen"
-	"github.com/njuwelkin/lc/kitchen/pkg/test"
+	"kitchen/pkg/cleaner"
+	"kitchen/pkg/core"
+	"kitchen/pkg/kitchen"
+	"kitchen/pkg/test"
 )
 
 func TestCleaner(tt *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"github.com/onsi/gomega"
 	"testing"
 
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"kitchen/pkg/core"
 )
 
 func getTestContext() *core.Context {

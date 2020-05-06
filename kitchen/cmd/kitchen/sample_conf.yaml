@@ -1,0 +1,9 @@
+ingestInterval: 50
+shelfCapacity:
+  hot: 10
+  cold: 10
+  frozen: 10
+  overflow: 15
+numOfCouriers: 50
+minPickDuration: 2
+maxPickDuration: 6

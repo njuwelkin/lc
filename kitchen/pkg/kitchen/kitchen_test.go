@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
-	"github.com/njuwelkin/lc/kitchen/pkg/kitchen"
-	"github.com/njuwelkin/lc/kitchen/pkg/test"
+	"kitchen/pkg/core"
+	"kitchen/pkg/kitchen"
+	"kitchen/pkg/test"
 )
 
 type colleague struct {

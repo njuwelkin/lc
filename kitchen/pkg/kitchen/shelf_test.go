@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
-	"github.com/njuwelkin/lc/kitchen/pkg/test"
+	"kitchen/pkg/core"
+	"kitchen/pkg/test"
 )
 
 type mockKitchen struct {

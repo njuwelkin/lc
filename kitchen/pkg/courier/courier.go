@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/njuwelkin/lc/kitchen/pkg/common/worker_pool"
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"kitchen/pkg/common/worker_pool"
+	"kitchen/pkg/core"
 )
 
 type courierMgr struct {

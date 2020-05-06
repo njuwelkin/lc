@@ -60,6 +60,6 @@ func (a *audit) printSingleShelf(t OrderTemp, content []*Order) {
 	name := shelfName[t]
 	a.printLine(fmt.Sprintf("------------------------ %s --------------------------", name))
 	for i, order := range content {
-		a.printLine(fmt.Sprintf("%d: %s", i+1, order.ID))
+		a.printLine(fmt.Sprintf("%d: %s\t%f", i+1, order.ID, order.Value()))
 	}
 }

@@ -1,7 +1,7 @@
 package cook
 
 import (
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"kitchen/pkg/core"
 	"time"
 )
 

@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"kitchen/pkg/core"
 )
 
 // mock shelf

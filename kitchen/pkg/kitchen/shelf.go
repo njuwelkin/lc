@@ -1,7 +1,7 @@
 package kitchen
 
 import (
-	"github.com/njuwelkin/lc/kitchen/pkg/core"
+	"kitchen/pkg/core"
 	"sync"
 	"time"
 )
@@ -237,10 +237,12 @@ func (s *shelfSet) Pick(order *core.Order) error {
 
 func (s *shelfSet) content() [core.CountTempType + 1][]*core.Order {
 	var ret [core.CountTempType + 1][]*core.Order
+	now := time.Now()
 	// single shelvs
 	for t := core.Hot; t < core.CountTempType; t++ {
 		ret[t] = make([]*core.Order, 0, s.singleShelves[t].size())
 		for _, v := range s.singleShelves[t].content {
+			updateRemainLife(v, now, false)
 			ret[t] = append(ret[t], v)
 		}
 	}
@@ -249,6 +251,7 @@ func (s *shelfSet) content() [core.CountTempType + 1][]*core.Order {
 	ret[overFlowIdx] = make([]*core.Order, 0, s.overflowShelf.size())
 	for t := core.Hot; t < core.CountTempType; t++ {
 		for _, v := range s.overflowShelf[t].content {
+			updateRemainLife(v, now, true)
 			ret[overFlowIdx] = append(ret[overFlowIdx], v)
 		}
 	}
