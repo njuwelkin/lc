@@ -2,48 +2,51 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"os"
+	"strconv"
+	"time"
 )
 
-func isPalindrome(n int) bool {
-	if n%10 == 0 {
-		//return false
+func puzzle() (string, int) {
+	a, b := rand.Intn(20), rand.Intn(10)
+	return fmt.Sprintf("%d + %d = ", a, b), a + b
+}
+
+func checkArgs() int {
+	if len(os.Args) == 1 {
+		return 20
 	}
-	m := 0
-	for m < n {
-		tmp := n % 10
-		m = 10*m + tmp
-		n /= 10
+	ret, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		panic("wrong args")
 	}
-	if m > n {
-		m /= 10
-	}
-	return m == n
+	return ret
 }
 
 func main() {
 	fmt.Println("vim-go")
-
-	bound := 10
-	for i := 1; i < 10; i++ {
-		max := 0
-		maxM, maxN := 1, 1
-		for m := bound - 1; m >= bound/10; m-- {
-			if m*m < max {
+	start := time.Now()
+	rand.Seed(start.Unix())
+	countWrong := 0
+	total := checkArgs()
+	for i := 0; i < total; i++ {
+		q, a := puzzle()
+		//for j := 0; j < 2; j++ {
+		for {
+			fmt.Printf("第%d题: %s", i+1, q)
+			var rawinput string
+			fmt.Scanln(&rawinput)
+			input, err := strconv.Atoi(rawinput)
+			if err == nil && input == a {
+				fmt.Println("正确")
 				break
 			}
-			for n := m; n >= bound/10; n-- {
-				product := m * n
-				if product < max {
-					break
-				}
-				if isPalindrome(product) {
-					max = product
-					maxM, maxN = m, n
-				}
-			}
+			countWrong++
+			fmt.Println("错")
 		}
-		fmt.Printf("%d*%d=%d, mod 1337=%d\n", maxM, maxN, max, max%1337)
-		bound *= 10
+		//}
 	}
-
+	d := time.Since(start)
+	fmt.Printf("总共%d题，错误%d次，用时%f分钟\n", total, countWrong, d.Minutes())
 }
