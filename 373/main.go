@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"container/heap"
+	"fmt"
+)
 
 func min(x, y int) int {
 	if x < y {

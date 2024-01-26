@@ -32,7 +32,7 @@ func checkRecord1(n int) int {
 
 func checkRecord(n int) int {
 	x := 1000000007
-	dp := [2][3]int{{1, 1, 0}, {1, 0, 0}}
+	dp := [2][3]int{{1, 1, 0}, {1, 0, 0}} // dp[i][j]: i = countA; j == countTailL
 	for i := 2; i <= n; i++ {
 		tmp := [2][3]int{
 			{dp[0][0], dp[0][1], dp[0][2]},
