@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	. "github.com/njuwelkin/lc/ds"
 )
 
@@ -47,5 +48,8 @@ func countNodes(root *TreeNode) int {
 
 func main() {
 	fmt.Println("vim-go")
-	fmt.Println(countNodes(NewBTree([]int{1, 2, 3, 4, 5, 6, Null})))
+	//fmt.Println(countNodes(NewBTree([]int{1, 2, 3, 4, 5, 6, Null})))
+	//fmt.Println(countNodes(nil))
+	//fmt.Println(countNodes(NewBTree([]int{1, Null, Null})))
+	fmt.Println(countNodes(NewBTree([]int{1, 2, 3, 4})))
 }

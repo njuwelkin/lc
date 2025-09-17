@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	. "github.com/njuwelkin/lc/ds"
 )
 
@@ -15,7 +16,7 @@ func search(root, p, q *TreeNode) bool {
 	return search(root.Left, p, q) || search(root.Right, p, q)
 }
 
-func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
+func lowestCommonAncestor1(root, p, q *TreeNode) *TreeNode {
 	var ret *TreeNode
 	var search2 func(root *TreeNode) int
 	search2 = func(root *TreeNode) int {
@@ -45,6 +46,38 @@ func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
 		}
 	}
 	search2(root)
+	return ret
+}
+
+func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
+	var ret *TreeNode
+	var dfs func(root *TreeNode) int
+	dfs = func(root *TreeNode) int {
+		if root == nil {
+			return 0
+		}
+		foundLeft := dfs(root.Left)
+		if foundLeft == 2 {
+			return 2
+		}
+		foundCurrent := 0
+		if root == p || root == q {
+			foundCurrent = 1
+		}
+		if foundLeft+foundCurrent == 2 {
+			ret = root
+			return 2
+		}
+		foundRight := dfs(root.Right)
+		if foundRight == 2 {
+			return 2
+		}
+		if foundLeft+foundCurrent+foundRight == 2 {
+			ret = root
+		}
+		return foundLeft + foundCurrent + foundRight
+	}
+	dfs(root)
 	return ret
 }
 

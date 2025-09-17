@@ -38,11 +38,45 @@ func (w *Win) Top() int {
 	return w.buf[w.head]
 }
 
+type Win2 struct {
+	buf        []int
+	head, tail int
+}
+
+func NewWin2(n int) Win2 {
+	return Win2{make([]int, n), 0, 0}
+}
+
+func (w *Win2) Insert(num int) {
+	i, j := w.head, w.tail
+	for i < j {
+		mid := (i + j) / 2
+		if w.buf[mid] >= num {
+			i = mid + 1
+		} else {
+			j = mid
+		}
+	}
+	w.buf[i] = num
+	w.tail = (i + 1)
+}
+
+func (w *Win2) Delete(num int) {
+	if w.buf[w.head] == num {
+		w.head = (w.head + 1)
+	}
+}
+
+func (w *Win2) Top() int {
+	return w.buf[w.head]
+}
+
 func maxSlidingWindow(nums []int, k int) []int {
 	if k == 0 || len(nums) < k {
 		return []int{}
 	}
-	w := NewWin(k)
+	//w := NewWin(k)
+	w := NewWin2(len(nums) + 1)
 	for i := 0; i < k; i++ {
 		w.Insert(nums[i])
 	}
@@ -60,4 +94,5 @@ func main() {
 	fmt.Println("vim-go")
 	fmt.Println(maxSlidingWindow([]int{1, 3, -1, -3, 5, 3, 6, 7}, 3))
 	fmt.Println(maxSlidingWindow([]int{1, 3, -1, -3, 5, 3, 6, 7}, 1))
+	fmt.Println(maxSlidingWindow([]int{-7, -8, 7, 5, 7, 1, 6, 0}, 4))
 }
